@@ -169,7 +169,7 @@ function toggleCalculationMode() {
         panelTitle.textContent = 'Budget Parameters';
         queriesLabel.textContent = 'Max Queries (optional):';
         chartTitle.textContent = '📊 Capacity Analysis';
-        recommendationsTitle.textContent = '💡 Best Capacity Options';
+        recommendationsTitle.textContent = '📋 Model Rankings (by Capacity)';
     } else {
         // Switch to Standard mode
         calculatorPanel.classList.remove('budget-mode');
@@ -178,7 +178,7 @@ function toggleCalculationMode() {
         panelTitle.textContent = 'Query Parameters';
         queriesLabel.textContent = 'Queries:';
         chartTitle.textContent = '📊 Cost Analysis';
-        recommendationsTitle.textContent = '💡 Best Options for You';
+        recommendationsTitle.textContent = '📋 Model Rankings (by Cost)';
     }
     
     // Refresh analysis with new mode
@@ -617,7 +617,7 @@ function generateRecommendations() {
     const recommendationsContainer = document.getElementById('recommendationsContent');
     
     if (isBudgetMode) {
-        // Budget mode: Recommend models with highest capacity
+        // Budget mode: Show ranked list by capacity (max queries)
         const maxQueries = queries > 0 ? queries : null;
         
         const results = Array.from(selectedModels).map(modelId => {
@@ -633,48 +633,24 @@ function generateRecommendations() {
             return;
         }
         
-        // Sort by max queries (descending)
+        // Sort by max queries (descending - highest capacity first)
         results.sort((a, b) => b.maxQueries - a.maxQueries);
         
-        const bestCapacity = results[0];
-        const topProviders = {};
-        
-        // Find best model per provider
-        results.forEach(result => {
-            if (!topProviders[result.provider] || 
-                result.maxQueries > topProviders[result.provider].maxQueries) {
-                topProviders[result.provider] = result;
-            }
-        });
-        
-        recommendationsContainer.innerHTML = `
-            <div class="recommendation-item best">
+        recommendationsContainer.innerHTML = results.map((result, index) => `
+            <div class="recommendation-item ${index === 0 ? 'best' : ''}">
                 <div>
-                    <div class="recommendation-label">🚀 Meilleure Capacité</div>
-                    <div class="recommendation-model">${bestCapacity.model} (${bestCapacity.provider})</div>
+                    <div class="recommendation-label">${index + 1}. ${result.model}</div>
+                    <div class="recommendation-model">${result.provider}</div>
                 </div>
                 <div>
-                    <div class="recommendation-cost">${formatNumber(bestCapacity.maxQueries)} requêtes</div>
-                    <div class="recommendation-savings">${formatCurrency(bestCapacity.actualTotalCost)} utilisé</div>
+                    <div class="recommendation-cost">${formatNumber(result.maxQueries)} queries</div>
+                    <div class="recommendation-savings">${formatCurrency(result.actualTotalCost)} cost</div>
                 </div>
             </div>
-            
-            ${Object.values(topProviders).slice(0, 4).map((result, index) => `
-                <div class="recommendation-item">
-                    <div>
-                        <div class="recommendation-label">${index === 0 ? '🥈' : index === 1 ? '🥉' : '📍'} ${result.provider}</div>
-                        <div class="recommendation-model">${result.model}</div>
-                    </div>
-                    <div>
-                        <div class="recommendation-cost">${formatNumber(result.maxQueries)} requêtes</div>
-                        ${result !== bestCapacity ? `<div class="recommendation-savings">-${formatNumber(bestCapacity.maxQueries - result.maxQueries)} requêtes</div>` : ''}
-                    </div>
-                </div>
-            `).join('')}
-        `;
+        `).join('');
         
     } else {
-        // Standard mode: Recommend cheapest models (original logic)
+        // Standard mode: Show ranked list by cost (cheapest to most expensive)
         const results = Array.from(selectedModels).map(modelId => {
             try {
                 return calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
@@ -688,44 +664,20 @@ function generateRecommendations() {
             return;
         }
         
-        // Sort by total cost
+        // Sort by total cost (ascending - cheapest first)
         results.sort((a, b) => a.totalCost - b.totalCost);
         
-        const cheapest = results[0];
-        const topProviders = {};
-        
-        // Find best model per provider
-        results.forEach(result => {
-            if (!topProviders[result.provider] || 
-                result.totalCost < topProviders[result.provider].totalCost) {
-                topProviders[result.provider] = result;
-            }
-        });
-        
-        recommendationsContainer.innerHTML = `
-            <div class="recommendation-item best">
+        recommendationsContainer.innerHTML = results.map((result, index) => `
+            <div class="recommendation-item ${index === 0 ? 'best' : ''}">
                 <div>
-                    <div class="recommendation-label">🥇 Cheapest Option</div>
-                    <div class="recommendation-model">${cheapest.model} (${cheapest.provider})</div>
+                    <div class="recommendation-label">${index + 1}. ${result.model}</div>
+                    <div class="recommendation-model">${result.provider}</div>
                 </div>
                 <div>
-                    <div class="recommendation-cost">${formatCurrency(cheapest.totalCost)}</div>
+                    <div class="recommendation-cost">${formatCurrency(result.totalCost)}</div>
                 </div>
             </div>
-            
-            ${Object.values(topProviders).slice(0, 4).map((result, index) => `
-                <div class="recommendation-item">
-                    <div>
-                        <div class="recommendation-label">${index === 0 ? '🥈' : index === 1 ? '🥉' : '📍'} ${result.provider}</div>
-                        <div class="recommendation-model">${result.model}</div>
-                    </div>
-                    <div>
-                        <div class="recommendation-cost">${formatCurrency(result.totalCost)}</div>
-                        ${result !== cheapest ? `<div class="recommendation-savings">+${formatCurrency(result.totalCost - cheapest.totalCost)}</div>` : ''}
-                    </div>
-                </div>
-            `).join('')}
-        `;
+        `).join('');
     }
 }
 
