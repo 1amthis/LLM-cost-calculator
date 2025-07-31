@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LLM API Cost Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f8f9fa;
+            color: #212529;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #6c757d;
+            font-size: 1rem;
+        }
+        
+        
+        
+        
+        .calculator-panel {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 30px;
+        }
+        
+        .panel-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .bulk-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .bulk-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+        
+        .bulk-btn:hover {
+            background: #495057;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #495057;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        select, input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #495057;
+            background: white;
+            transition: border-color 0.2s ease;
+        }
+        
+        select:focus, input:focus {
+            outline: none;
+            border-color: #495057;
+            box-shadow: 0 0 0 2px rgba(73, 80, 87, 0.1);
+        }
+        
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .calculate-btn {
+            background: #495057;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+            width: 100%;
+        }
+        
+        .calculate-btn:hover {
+            background: #343a40;
+        }
+        
+        
+        /* Simplified Analysis Dashboard */
+        .analysis-dashboard {
+            margin-top: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .recommendations-card,
+        .chart-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 20px;
+        }
+        
+        .recommendations-card h3,
+        .chart-card h3 {
+            margin: 0 0 15px 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .chart-wrapper {
+            height: 300px;
+            position: relative;
+        }
+        
+        .recommendation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+        }
+        
+        .recommendation-item.best {
+            background: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .recommendation-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        
+        .recommendation-model {
+            color: #6c757d;
+            font-size: 14px;
+        }
+        
+        .recommendation-cost {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #28a745;
+        }
+        
+        .recommendation-savings {
+            font-size: 12px;
+            color: #28a745;
+        }
+        
+        /* Mode Toggle Styles */
+        .mode-toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            gap: 15px;
+        }
+
+        .mode-toggle {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .mode-toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .mode-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #495057;
+            transition: .4s;
+            border-radius: 17px;
+        }
+
+        .mode-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .mode-slider {
+            background-color: #28a745;
+        }
+
+        input:checked + .mode-slider:before {
+            transform: translateX(26px);
+        }
+
+        .mode-label {
+            font-weight: 500;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        .mode-label.active {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        /* Budget field styles */
+        .budget-field {
+            display: none;
+        }
+
+        .budget-mode .budget-field {
+            display: block;
+        }
+
+        /* Model Selection Styles */
+        #modelSelector {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            background: #f8f9fa;
+        }
+        
+        .provider-section {
+            margin-bottom: 20px;
+        }
+        
+        .provider-header {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            font-size: 14px;
+        }
+        
+        .model-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .model-checkbox:hover {
+            border-color: #495057;
+            background: #f8f9fa;
+        }
+        
+        .model-checkbox input[type="checkbox"] {
+            margin: 0;
+            width: auto;
+        }
+        
+        .model-info {
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+        
+        .model-name {
+            font-weight: 500;
+            color: #495057;
+        }
+        
+        .model-cost {
+            font-size: 11px;
+            color: #6c757d;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .selected-count {
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+            padding: 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 10px;
+            }
+            
+            .calculator-panel {
+                padding: 20px;
+            }
+            
+            .analysis-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>LLM API Cost Calculator</h1>
+            <p>Compare costs across different LLM providers and models</p>
+        </div>
+        
+        
+        <!-- Parameters Panel -->
+        <div class="calculator-panel">
+            <!-- Mode Toggle -->
+            <div class="mode-toggle-container">
+                <span class="mode-label active" id="standardModeLabel">Mode Standard</span>
+                <label class="mode-toggle">
+                    <input type="checkbox" id="modeToggle" onchange="toggleCalculationMode()">
+                    <span class="mode-slider"></span>
+                </label>
+                <span class="mode-label" id="budgetModeLabel">Mode Budget</span>
+            </div>
+            
+            <div class="panel-title">
+                <span id="panelTitle">Query Parameters</span>
+            </div>
+            <form id="parametersForm">
+                <div class="input-row">
+                    <div class="form-group">
+                        <label for="queries" id="queriesLabel">Queries:</label>
+                        <input type="number" id="queries" min="1" value="100" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timeframe" id="timeframeLabel">Period:</label>
+                        <select id="timeframe" required>
+                            <option value="single">Single Use</option>
+                            <option value="daily">Per Day</option>
+                            <option value="monthly" selected>Per Month</option>
+                            <option value="yearly">Per Year</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Budget field (only visible in budget mode) -->
+                    <div class="form-group budget-field">
+                        <label for="budget">Budget Maximum:</label>
+                        <input type="number" id="budget" min="0.01" step="0.01" value="20.00" placeholder="Ex: 20.00">
+                    </div>
+                </div>
+                
+                <div class="input-row">
+                    <div class="form-group">
+                        <label for="inputTokens">Input Tokens per Query:</label>
+                        <input type="number" id="inputTokens" min="1" value="1000" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="outputTokens">Output Tokens per Query:</label>
+                        <input type="number" id="outputTokens" min="1" value="100" required>
+                    </div>
+                </div>
+                
+                <div class="input-row">
+                    <div class="form-group">
+                        <label for="usageScenario">Usage Type:</label>
+                        <select id="usageScenario">
+                            <option value="custom">Custom</option>
+                            <option value="chatbot">Chat Bot</option>
+                            <option value="content">Content Generation</option>
+                            <option value="code">Code Assistant</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="providerFilter">Show Only:</label>
+                        <select id="providerFilter">
+                            <option value="all">All Providers</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <button type="submit" class="calculate-btn">Calculate</button>
+            </form>
+        </div>
+        
+        <!-- Model Selection -->
+        <div class="calculator-panel" style="margin-top: 50px;">
+            <div class="panel-title">
+                Select Models to Compare
+                <div class="bulk-actions">
+                    <button type="button" id="selectAllBtn" class="bulk-btn">Select All</button>
+                    <button type="button" id="selectNoneBtn" class="bulk-btn">Select None</button>
+                </div>
+            </div>
+            <div id="modelSelector">
+                <!-- Dynamically populated model checkboxes -->
+            </div>
+            <div class="selected-count">
+                <span id="selectedCount">0</span> models selected
+            </div>
+        </div>
+
+        <!-- Analysis Dashboard -->
+        <div class="analysis-dashboard">
+            <!-- Main Analysis -->
+            <div class="analysis-grid">
+                <!-- Recommendations -->
+                <div class="recommendations-card">
+                    <h3 id="recommendationsTitle">💡 Best Options for You</h3>
+                    <div id="recommendationsContent">
+                        <p>Select some models above to see recommendations.</p>
+                    </div>
+                </div>
+
+                <!-- Cost Overview Chart -->
+                <div class="chart-card">
+                    <h3 id="chartTitle">📊 Cost Analysis</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        </div>
+    </div>
+
+    <script src="calculator-litellm.js"></script>
+</body>
+</html>

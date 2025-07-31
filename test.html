@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quick Test</title>
+</head>
+<body>
+    <h1>LLM Calculator Test</h1>
+    <p>Test the calculator by opening index.html and following these steps:</p>
+    
+    <h2>1. Single Model Test</h2>
+    <ul>
+        <li>Default should be GPT-4o Mini with 100 queries, 1000 input, 100 output tokens, monthly</li>
+        <li>Click "Calculate" - should show $0.033 total cost</li>
+        <li>Should display a doughnut chart showing input vs output costs</li>
+        <li>Chart should NOT expand when scrolling</li>
+    </ul>
+    
+    <h2>2. Comparison Test</h2>
+    <ul>
+        <li>Click "Compare Models" button</li>
+        <li>Keep GPT-4o Mini as primary model</li>
+        <li>Select "Claude 3 Haiku" as comparison model</li>
+        <li>Click "Calculate"</li>
+        <li>Should show side-by-side results with bar chart</li>
+        <li>Should show savings summary (Claude 3 Haiku is cheaper)</li>
+        <li>No errors should appear in console</li>
+    </ul>
+    
+    <h2>Expected Results:</h2>
+    <p><strong>GPT-4o Mini (100 queries/month, 1000 input, 100 output):</strong><br>
+    Total: $0.033</p>
+    
+    <p><strong>Claude 3 Haiku (same parameters):</strong><br>
+    Total: $0.0525</p>
+    
+    <p><strong>Comparison:</strong><br>
+    GPT-4o Mini is $0.0195 cheaper (37.1% savings)</p>
+</body>
+</html>
