@@ -348,12 +348,19 @@ function getFilteredModels() {
 }
 
 // Generate model selector with checkboxes organized by provider
-function generateModelSelector() {
+function generateModelSelector(searchTerm = '') {
     const filteredModels = getFilteredModels();
     const modelsByProvider = {};
     
-    // Group models by provider
+    // Group models by provider and apply search filter
     Object.entries(filteredModels).forEach(([id, model]) => {
+        // Apply search filter
+        if (searchTerm && !model.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
+            !id.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            !model.provider.toLowerCase().includes(searchTerm.toLowerCase())) {
+            return;
+        }
+        
         if (!modelsByProvider[model.provider]) {
             modelsByProvider[model.provider] = [];
         }
@@ -718,9 +725,10 @@ function handleUsageScenarioChange() {
 function handleProviderFilterChange() {
     currentProviderFilter = document.getElementById('providerFilter').value;
     
-    // Clear current selections and regenerate model selector
+    // Clear current selections and regenerate model selector with current search term
     selectedModels.clear();
-    generateModelSelector();
+    const searchTerm = document.getElementById('modelSearch').value.trim();
+    generateModelSelector(searchTerm);
     updateAnalysis();
 }
 
@@ -759,6 +767,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Bulk selection buttons
     document.getElementById('selectAllBtn').addEventListener('click', selectAllModels);
     document.getElementById('selectNoneBtn').addEventListener('click', selectNoneModels);
+    
+    // Model search functionality
+    document.getElementById('modelSearch').addEventListener('input', function(e) {
+        const searchTerm = e.target.value.trim();
+        generateModelSelector(searchTerm);
+    });
     
     // Auto-update analysis when parameters change
     ['queries', 'inputTokens', 'outputTokens', 'timeframe', 'budget'].forEach(id => {
