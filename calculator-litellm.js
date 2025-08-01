@@ -685,25 +685,37 @@ function generateModelSelector(searchTerm = '') {
         // Sort models by total cost
         models.sort((a, b) => (a.inputCost + a.outputCost) - (b.inputCost + b.outputCost));
         
+        // Determine if provider should be expanded by default (popular providers)
+        const popularProviders = ['OpenAI', 'Anthropic', 'Google', 'Meta'];
+        const isExpanded = popularProviders.includes(provider);
+        
         providerSection.innerHTML = `
-            <div class="provider-header">
-                ${provider}
-                ${providerInfo[provider] ? `<button class="provider-info-btn" onclick="showProviderInfo('${provider}')" title="Learn more about ${provider}">ℹ️</button>` : ''}
+            <div class="provider-header" onclick="toggleProviderSection('${provider}')">
+                <div class="provider-title">
+                    <span class="provider-collapse-icon ${isExpanded ? '' : 'collapsed'}">▼</span>
+                    ${provider}
+                    <span class="provider-model-count">${models.length} models</span>
+                </div>
+                <div class="provider-actions">
+                    ${providerInfo[provider] ? `<button class="provider-info-btn" onclick="event.stopPropagation(); showProviderInfo('${provider}')" title="Learn more about ${provider}">ℹ️</button>` : ''}
+                </div>
             </div>
-            ${models.map(model => `
-                <label class="model-checkbox">
-                    <input type="checkbox" 
-                           value="${model.id}" 
-                           onchange="toggleModelSelection('${model.id}')"
-                           ${selectedModels.has(model.id) ? 'checked' : ''}>
-                    <div class="model-info">
-                        <div class="model-name">${model.name}</div>
-                        <div class="model-cost">
-                            $${model.inputCost.toFixed(2)}/1M in • $${model.outputCost.toFixed(2)}/1M out
+            <div class="provider-models ${isExpanded ? 'expanded' : 'collapsed'}" id="provider-${provider.replace(/\s+/g, '-')}">
+                ${models.map(model => `
+                    <label class="model-checkbox">
+                        <input type="checkbox" 
+                               value="${model.id}" 
+                               onchange="toggleModelSelection('${model.id}')"
+                               ${selectedModels.has(model.id) ? 'checked' : ''}>
+                        <div class="model-info">
+                            <div class="model-name">${model.name}</div>
+                            <div class="model-cost">
+                                $${model.inputCost.toFixed(2)}/1M in • $${model.outputCost.toFixed(2)}/1M out
+                            </div>
                         </div>
-                    </div>
-                </label>
-            `).join('')}
+                    </label>
+                `).join('')}
+            </div>
         `;
         
         modelSelector.appendChild(providerSection);
@@ -756,6 +768,51 @@ function selectNoneModels() {
     
     updateSelectedCount();
     updateAnalysis();
+}
+
+// Toggle provider section collapse/expand
+function toggleProviderSection(provider) {
+    const providerId = provider.replace(/\s+/g, '-');
+    const modelsContainer = document.getElementById(`provider-${providerId}`);
+    const icon = document.querySelector(`[onclick*="${provider}"] .provider-collapse-icon`);
+    
+    if (!modelsContainer || !icon) return;
+    
+    const isCollapsed = modelsContainer.classList.contains('collapsed');
+    
+    if (isCollapsed) {
+        modelsContainer.classList.remove('collapsed');
+        modelsContainer.classList.add('expanded');
+        icon.classList.remove('collapsed');
+    } else {
+        modelsContainer.classList.remove('expanded');
+        modelsContainer.classList.add('collapsed');
+        icon.classList.add('collapsed');
+    }
+}
+
+// Expand all provider sections
+function expandAllProviders() {
+    document.querySelectorAll('.provider-models').forEach(container => {
+        container.classList.remove('collapsed');
+        container.classList.add('expanded');
+    });
+    
+    document.querySelectorAll('.provider-collapse-icon').forEach(icon => {
+        icon.classList.remove('collapsed');
+    });
+}
+
+// Collapse all provider sections
+function collapseAllProviders() {
+    document.querySelectorAll('.provider-models').forEach(container => {
+        container.classList.remove('expanded');
+        container.classList.add('collapsed');
+    });
+    
+    document.querySelectorAll('.provider-collapse-icon').forEach(icon => {
+        icon.classList.add('collapsed');
+    });
 }
 
 // Create main analysis chart
@@ -1213,6 +1270,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Bulk selection buttons
     document.getElementById('selectAllBtn').addEventListener('click', selectAllModels);
     document.getElementById('selectNoneBtn').addEventListener('click', selectNoneModels);
+    
+    // Provider collapse/expand buttons
+    document.getElementById('expandAllBtn').addEventListener('click', expandAllProviders);
+    document.getElementById('collapseAllBtn').addEventListener('click', collapseAllProviders);
     
     // Model search functionality
     document.getElementById('modelSearch').addEventListener('input', function(e) {

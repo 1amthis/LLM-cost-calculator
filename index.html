@@ -532,6 +532,21 @@
             margin-bottom: var(--space-5);
         }
         
+        .provider-models {
+            transition: max-height 0.3s ease, opacity 0.2s ease;
+            overflow: hidden;
+        }
+        
+        .provider-models.collapsed {
+            max-height: 0;
+            opacity: 0;
+        }
+        
+        .provider-models.expanded {
+            max-height: 2000px;
+            opacity: 1;
+        }
+        
         .provider-header {
             font-weight: 700;
             color: var(--gray-900);
@@ -547,6 +562,47 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: all 0.2s ease;
+        }
+        
+        .provider-header:hover {
+            background: linear-gradient(135deg, var(--primary-50) 0%, var(--primary-100) 100%);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .provider-title {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
+            flex: 1;
+        }
+        
+        .provider-collapse-icon {
+            font-size: 0.75rem;
+            transition: transform 0.2s ease;
+            color: var(--primary-600);
+        }
+        
+        .provider-collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        
+        .provider-model-count {
+            font-size: 0.75rem;
+            color: var(--gray-600);
+            font-weight: 500;
+            background: var(--gray-100);
+            padding: var(--space-1) var(--space-2);
+            border-radius: var(--radius-sm);
+        }
+        
+        .provider-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--space-2);
         }
         
         .provider-info-btn {
@@ -951,6 +1007,8 @@
             <div class="panel-title">
                 Select Models to Compare
                 <div class="bulk-actions">
+                    <button type="button" id="expandAllBtn" class="bulk-btn">Expand All</button>
+                    <button type="button" id="collapseAllBtn" class="bulk-btn">Collapse All</button>
                     <button type="button" id="selectAllBtn" class="bulk-btn">Select All</button>
                     <button type="button" id="selectNoneBtn" class="bulk-btn">Select None</button>
                 </div>
