@@ -328,40 +328,49 @@
             padding: var(--space-4);
             margin: var(--space-2) 0;
             background: var(--gray-50);
-            border: 1px solid var(--gray-200);
+            border: none;
             border-radius: var(--radius-lg);
             transition: all 0.2s ease;
             position: relative;
+            box-shadow: var(--shadow-sm);
         }
         
         .recommendation-item:hover {
             background: var(--gray-100);
-            border-color: var(--gray-300);
             transform: translateX(4px);
-        }
-        
-        .recommendation-item.best {
-            background: var(--success-50);
-            border-color: var(--success-200);
             box-shadow: var(--shadow-md);
         }
         
-        .recommendation-item.best::before {
-            content: '🏆';
-            position: absolute;
-            left: -8px;
-            top: -8px;
-            background: var(--success-500);
-            color: white;
-            border-radius: 50%;
-            width: 24px;
-            height: 24px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            box-shadow: var(--shadow-md);
+        /* Gold medal - 1st place */
+        .recommendation-item:nth-child(1) {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border-left: 4px solid #d97706;
         }
+        
+        .recommendation-item:nth-child(1):hover {
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+        }
+        
+        /* Silver medal - 2nd place */
+        .recommendation-item:nth-child(2) {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            border-left: 4px solid #475569;
+        }
+        
+        .recommendation-item:nth-child(2):hover {
+            background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+        }
+        
+        /* Bronze medal - 3rd place */
+        .recommendation-item:nth-child(3) {
+            background: linear-gradient(135deg, #fff7ed 0%, #fed7aa 100%);
+            border-left: 4px solid #c2410c;
+        }
+        
+        .recommendation-item:nth-child(3):hover {
+            background: linear-gradient(135deg, #fed7aa 0%, #fdba74 100%);
+        }
+        
         
         .recommendation-label {
             font-weight: 700;
@@ -386,6 +395,22 @@
             font-size: 0.75rem;
             color: var(--success-600);
             font-weight: 600;
+        }
+        
+        /* Better text colors for medal backgrounds */
+        .recommendation-item:nth-child(1) .recommendation-cost,
+        .recommendation-item:nth-child(1) .recommendation-savings {
+            color: #92400e; /* Darker amber for gold background */
+        }
+        
+        .recommendation-item:nth-child(2) .recommendation-cost,
+        .recommendation-item:nth-child(2) .recommendation-savings {
+            color: #374151; /* Dark gray for silver background */
+        }
+        
+        .recommendation-item:nth-child(3) .recommendation-cost,
+        .recommendation-item:nth-child(3) .recommendation-savings {
+            color: #9a3412; /* Darker orange for bronze background */
         }
         
         /* Modern Mode Toggle Styles */
@@ -527,7 +552,7 @@
             gap: var(--space-3);
             padding: var(--space-3) var(--space-4);
             background: white;
-            border: 1px solid var(--gray-200);
+            border: none;
             border-radius: var(--radius-lg);
             font-size: 0.875rem;
             cursor: pointer;
@@ -538,14 +563,12 @@
         }
         
         .model-checkbox:hover {
-            border-color: var(--primary-300);
             background: var(--primary-50);
             transform: translateY(-1px);
             box-shadow: var(--shadow-md);
         }
         
         .model-checkbox:has(input:checked) {
-            border-color: var(--success-400);
             background: var(--success-50);
             box-shadow: var(--shadow-md);
             border-left: 4px solid var(--success-500);

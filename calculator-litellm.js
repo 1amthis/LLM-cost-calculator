@@ -571,9 +571,14 @@ function createMainChart() {
                         gradient.addColorStop(1, '#16a34a');
                         return gradient;
                     },
-                    borderColor: '#15803d',
-                    borderWidth: 1,
-                    borderRadius: 6,
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    borderRadius: {
+                        topLeft: 0,
+                        topRight: 8,
+                        bottomLeft: 0,
+                        bottomRight: 8
+                    },
                     borderSkipped: false,
                 }]
             },
@@ -668,9 +673,25 @@ function createMainChart() {
                         gradient.addColorStop(1, '#475569');
                         return gradient;
                     },
-                    borderColor: '#334155',
-                    borderWidth: 1,
-                    borderRadius: 6,
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    borderRadius: function(ctx) {
+                        const dataIndex = ctx.dataIndex;
+                        const datasets = ctx.chart.data.datasets;
+                        const hasOutputCost = datasets[1].data[dataIndex] > 0;
+                        
+                        // If there's output cost, don't round this segment
+                        if (hasOutputCost) {
+                            return 0;
+                        }
+                        // If no output cost, round the right side only
+                        return {
+                            topLeft: 0,
+                            topRight: 8,
+                            bottomLeft: 0,
+                            bottomRight: 8
+                        };
+                    },
                     borderSkipped: false,
                     stack: 'cost'
                 }, {
@@ -682,9 +703,14 @@ function createMainChart() {
                         gradient.addColorStop(1, '#0284c7');
                         return gradient;
                     },
-                    borderColor: '#0369a1',
-                    borderWidth: 1,
-                    borderRadius: 6,
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    borderRadius: {
+                        topLeft: 0,
+                        topRight: 8,
+                        bottomLeft: 0,
+                        bottomRight: 8
+                    },
                     borderSkipped: false,
                     stack: 'cost'
                 }]
