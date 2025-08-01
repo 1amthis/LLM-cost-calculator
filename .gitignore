@@ -17,3 +17,9 @@ Thumbs.db
 
 # Cache files
 .cache/
+
+# Development screenshots
+screenshot/
+*.png
+*.jpg
+*.jpeg

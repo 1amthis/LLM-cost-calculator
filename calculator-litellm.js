@@ -563,9 +563,18 @@ function createMainChart() {
             data: {
                 labels: sortedModels.map(m => `${m.model} (${m.provider})`),
                 datasets: [{
-                    label: 'Requêtes possibles',
+                    label: 'Queries Possible',
                     data: sortedModels.map(m => m.maxQueries),
-                    backgroundColor: '#28a745',
+                    backgroundColor: (ctx) => {
+                        const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                        gradient.addColorStop(0, '#22c55e');
+                        gradient.addColorStop(1, '#16a34a');
+                        return gradient;
+                    },
+                    borderColor: '#15803d',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
                 }]
             },
             options: {
@@ -575,16 +584,28 @@ function createMainChart() {
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { font: { size: 11 } }
+                        labels: { 
+                            font: { size: 12, weight: '600' },
+                            color: '#374151',
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded'
+                        }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#111827',
+                        bodyColor: '#374151',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: false,
                         callbacks: {
                             label: function(context) {
                                 const model = sortedModels[context.dataIndex];
                                 return [
-                                    `Requêtes: ${formatNumber(context.parsed.x)}`,
-                                    `Coût: ${formatCurrency(model.actualTotalCost)}`,
-                                    `Budget restant: ${formatCurrency(model.remainingBudget)}`
+                                    `Queries: ${formatNumber(context.parsed.x)}`,
+                                    `Cost: ${formatCurrency(model.actualTotalCost)}`,
+                                    `Budget Remaining: ${formatCurrency(model.remainingBudget)}`
                                 ];
                             }
                         }
@@ -593,15 +614,25 @@ function createMainChart() {
                 scales: {
                     x: {
                         beginAtZero: true,
+                        grid: {
+                            color: '#f3f4f6',
+                            drawBorder: false
+                        },
                         ticks: {
+                            color: '#6b7280',
+                            font: { size: 11 },
                             callback: function(value) {
                                 return formatNumber(value);
                             }
                         }
                     },
                     y: {
+                        grid: {
+                            display: false
+                        },
                         ticks: {
-                            font: { size: 10 }
+                            font: { size: 10, weight: '500' },
+                            color: '#374151'
                         }
                     }
                 }
@@ -631,12 +662,30 @@ function createMainChart() {
                 datasets: [{
                     label: 'Input Cost',
                     data: sortedModels.map(m => m.totalInputCost),
-                    backgroundColor: '#6c757d',
+                    backgroundColor: (ctx) => {
+                        const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                        gradient.addColorStop(0, '#64748b');
+                        gradient.addColorStop(1, '#475569');
+                        return gradient;
+                    },
+                    borderColor: '#334155',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
                     stack: 'cost'
                 }, {
                     label: 'Output Cost', 
                     data: sortedModels.map(m => m.totalOutputCost),
-                    backgroundColor: '#495057',
+                    backgroundColor: (ctx) => {
+                        const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                        gradient.addColorStop(0, '#0ea5e9');
+                        gradient.addColorStop(1, '#0284c7');
+                        return gradient;
+                    },
+                    borderColor: '#0369a1',
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
                     stack: 'cost'
                 }]
             },
@@ -647,12 +696,29 @@ function createMainChart() {
                 plugins: {
                     legend: {
                         position: 'top',
-                        labels: { font: { size: 11 } }
+                        labels: { 
+                            font: { size: 12, weight: '600' },
+                            color: '#374151',
+                            usePointStyle: true,
+                            pointStyle: 'rectRounded'
+                        }
                     },
                     tooltip: {
+                        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                        titleColor: '#111827',
+                        bodyColor: '#374151',
+                        borderColor: '#e5e7eb',
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        displayColors: true,
                         callbacks: {
                             label: function(context) {
                                 return `${context.dataset.label}: ${formatCurrency(context.parsed.x)}`;
+                            },
+                            afterBody: function(context) {
+                                const dataIndex = context[0].dataIndex;
+                                const model = sortedModels[dataIndex];
+                                return `Total: ${formatCurrency(model.totalCost)}`;
                             }
                         }
                     }
@@ -661,7 +727,13 @@ function createMainChart() {
                     x: {
                         beginAtZero: true,
                         stacked: true,
+                        grid: {
+                            color: '#f3f4f6',
+                            drawBorder: false
+                        },
                         ticks: {
+                            color: '#6b7280',
+                            font: { size: 11 },
                             callback: function(value) {
                                 return formatCurrency(value);
                             }
@@ -669,8 +741,12 @@ function createMainChart() {
                     },
                     y: {
                         stacked: true,
+                        grid: {
+                            display: false
+                        },
                         ticks: {
-                            font: { size: 10 }
+                            font: { size: 10, weight: '500' },
+                            color: '#374151'
                         }
                     }
                 }
@@ -805,11 +881,45 @@ function handleProviderFilterChange() {
 
 // Event listeners
 document.addEventListener('DOMContentLoaded', async function() {
-    // Show loading message
+    // Show enhanced loading message
     const loadingMsg = document.createElement('div');
     loadingMsg.id = 'loadingMsg';
-    loadingMsg.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 20px; border: 1px solid #ccc; border-radius: 4px; z-index: 1000;';
-    loadingMsg.innerHTML = '<div style="text-align: center;">Loading comprehensive model data from LiteLLM...<br><small>This includes hundreds of models from multiple providers</small></div>';
+    loadingMsg.style.cssText = `
+        position: fixed; 
+        top: 50%; 
+        left: 50%; 
+        transform: translate(-50%, -50%); 
+        background: white; 
+        padding: 2rem; 
+        border: 1px solid var(--gray-200); 
+        border-radius: 1rem; 
+        z-index: 1000;
+        box-shadow: var(--shadow-xl);
+        text-align: center;
+        min-width: 320px;
+    `;
+    
+    loadingMsg.innerHTML = `
+        <div style="display: flex; flex-direction: column; align-items: center; gap: 1rem;">
+            <div style="width: 40px; height: 40px; border: 3px solid var(--gray-200); border-top: 3px solid var(--primary-500); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+            <div style="color: var(--gray-900); font-weight: 600; font-size: 1.1rem;">Loading Model Data</div>
+            <div style="color: var(--gray-600); font-size: 0.9rem; line-height: 1.4;">
+                Fetching comprehensive pricing data from LiteLLM<br>
+                <small style="color: var(--gray-500);">Hundreds of models from multiple providers</small>
+            </div>
+        </div>
+    `;
+    
+    // Add spinner animation
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    `;
+    document.head.appendChild(style);
+    
     document.body.appendChild(loadingMsg);
     
     // Load pricing data
