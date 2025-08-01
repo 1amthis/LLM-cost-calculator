@@ -348,16 +348,87 @@ function getFilteredModels() {
 }
 
 // Generate model selector with checkboxes organized by provider
+// Enhanced search parser for complex queries
+function parseSearchQuery(searchTerm) {
+    if (!searchTerm) return null;
+    
+    const query = {
+        providers: [],
+        models: [],
+        general: []
+    };
+    
+    // Split by commas first for list support
+    const parts = searchTerm.split(',').map(part => part.trim().toLowerCase());
+    
+    parts.forEach(part => {
+        // Check for field-specific syntax (provider:value, model:value)
+        if (part.includes(':')) {
+            const [field, value] = part.split(':', 2);
+            const fieldName = field.trim();
+            const fieldValue = value.trim();
+            
+            if (fieldName === 'provider' || fieldName === 'p') {
+                query.providers.push(fieldValue);
+            } else if (fieldName === 'model' || fieldName === 'm') {
+                query.models.push(fieldValue);
+            } else {
+                // Unknown field, treat as general search
+                query.general.push(part);
+            }
+        } else {
+            // No field specified, treat as general search
+            query.general.push(part);
+        }
+    });
+    
+    return query;
+}
+
+// Enhanced search matching function
+function matchesSearchQuery(model, modelId, searchQuery) {
+    if (!searchQuery) return true;
+    
+    const modelName = model.name.toLowerCase();
+    const providerId = model.provider.toLowerCase();
+    const id = modelId.toLowerCase();
+    
+    // Check provider-specific filters
+    if (searchQuery.providers.length > 0) {
+        const providerMatch = searchQuery.providers.some(provider => 
+            providerId.includes(provider) || provider.includes(providerId)
+        );
+        if (!providerMatch) return false;
+    }
+    
+    // Check model-specific filters
+    if (searchQuery.models.length > 0) {
+        const modelMatch = searchQuery.models.some(modelSearch => 
+            modelName.includes(modelSearch) || id.includes(modelSearch)
+        );
+        if (!modelMatch) return false;
+    }
+    
+    // Check general search terms (must match at least one if present)
+    if (searchQuery.general.length > 0) {
+        const generalMatch = searchQuery.general.some(term => 
+            modelName.includes(term) || id.includes(term) || providerId.includes(term)
+        );
+        if (!generalMatch) return false;
+    }
+    
+    return true;
+}
+
 function generateModelSelector(searchTerm = '') {
     const filteredModels = getFilteredModels();
     const modelsByProvider = {};
+    const searchQuery = parseSearchQuery(searchTerm);
     
-    // Group models by provider and apply search filter
+    // Group models by provider and apply enhanced search filter
     Object.entries(filteredModels).forEach(([id, model]) => {
-        // Apply search filter
-        if (searchTerm && !model.name.toLowerCase().includes(searchTerm.toLowerCase()) && 
-            !id.toLowerCase().includes(searchTerm.toLowerCase()) &&
-            !model.provider.toLowerCase().includes(searchTerm.toLowerCase())) {
+        // Apply enhanced search filter
+        if (!matchesSearchQuery(model, id, searchQuery)) {
             return;
         }
         
