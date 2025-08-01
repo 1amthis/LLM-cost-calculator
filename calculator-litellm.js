@@ -247,6 +247,7 @@ async function loadPricingData() {
                     'anthropic': 'Anthropic', 
                     'azure': 'Azure',
                     'google': 'Google',
+                    'gemini': 'Google',
                     'cohere': 'Cohere',
                     'mistral': 'Mistral',
                     'bedrock': 'AWS Bedrock',
@@ -279,6 +280,22 @@ async function loadPricingData() {
                 provider = providerMap[litellmProvider] || 
                           (litellmProvider ? litellmProvider.charAt(0).toUpperCase() + litellmProvider.slice(1) : 'Unknown');
                 
+                // Additional fallback logic for models with unclear provider mapping
+                if (provider === 'Unknown' || provider === 'Gemini') {
+                    const modelIdLower = modelId.toLowerCase();
+                    if (modelIdLower.includes('gemini')) {
+                        provider = 'Google';
+                    } else if (modelIdLower.includes('gpt') || modelIdLower.includes('davinci') || modelIdLower.includes('curie') || modelIdLower.includes('babbage') || modelIdLower.includes('ada')) {
+                        provider = 'OpenAI';
+                    } else if (modelIdLower.includes('claude')) {
+                        provider = 'Anthropic';
+                    } else if (modelIdLower.includes('mistral') || modelIdLower.includes('mixtral')) {
+                        provider = 'Mistral';
+                    } else if (modelIdLower.includes('llama')) {
+                        // Could be from multiple providers, keep existing logic
+                    }
+                }
+                
                 // Convert scientific notation to dollar per million tokens
                 const inputCostPer1M = modelData.input_cost_per_token * 1000000;
                 const outputCostPer1M = modelData.output_cost_per_token * 1000000;
@@ -305,8 +322,8 @@ async function loadPricingData() {
         console.log(`Loaded ${Object.keys(modelPricing).length} models from LiteLLM`);
         
         // Refresh UI after data loads
-        if (typeof updateProviderOptions === 'function') {
-            updateProviderOptions();
+        if (typeof initializeProviderFilter === 'function') {
+            initializeProviderFilter();
         }
         
     } catch (error) {
@@ -570,6 +587,25 @@ function initializeProviderFilter() {
         option.value = provider;
         option.textContent = provider;
         providerSelect.appendChild(option);
+    });
+    
+    // Initialize quick filter buttons
+    updateQuickFilterButtons();
+}
+
+// Update quick filter button states
+function updateQuickFilterButtons() {
+    const quickFilterBtns = document.querySelectorAll('.quick-filter-btn');
+    const currentFilter = currentProviderFilter;
+    
+    quickFilterBtns.forEach(btn => {
+        const provider = btn.dataset.provider;
+        if ((provider === 'all' && currentFilter === 'all') || 
+            (provider !== 'all' && currentFilter === provider)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
     });
 }
 
@@ -1263,6 +1299,28 @@ function handleUsageScenarioChange() {
 function handleProviderFilterChange() {
     currentProviderFilter = document.getElementById('providerFilter').value;
     
+    // Update quick filter buttons and dropdown
+    updateQuickFilterButtons();
+    
+    // Clear current selections and regenerate model selector with current search term
+    selectedModels.clear();
+    const searchTerm = document.getElementById('modelSearch').value.trim();
+    generateModelSelector(searchTerm);
+    updateAnalysis();
+}
+
+// Handle quick filter button clicks
+function handleQuickFilterClick(providerName) {
+    // Update current filter
+    currentProviderFilter = providerName;
+    
+    // Update dropdown to match
+    const providerSelect = document.getElementById('providerFilter');
+    providerSelect.value = providerName;
+    
+    // Update button states
+    updateQuickFilterButtons();
+    
     // Clear current selections and regenerate model selector with current search term
     selectedModels.clear();
     const searchTerm = document.getElementById('modelSearch').value.trim();
@@ -1343,6 +1401,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Provider collapse/expand buttons
     document.getElementById('expandAllBtn').addEventListener('click', expandAllProviders);
     document.getElementById('collapseAllBtn').addEventListener('click', collapseAllProviders);
+    
+    // Quick filter buttons
+    document.querySelectorAll('.quick-filter-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const provider = btn.dataset.provider;
+            handleQuickFilterClick(provider);
+        });
+    });
     
     // Recommendations show more/less buttons
     document.getElementById('showMoreBtn').addEventListener('click', () => {

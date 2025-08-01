@@ -751,6 +751,44 @@
             box-shadow: var(--shadow-sm);
         }
         
+        /* Quick filter buttons */
+        .quick-filter-btn {
+            background: white;
+            color: var(--gray-700);
+            border: 1px solid var(--gray-300);
+            padding: var(--space-2) var(--space-3);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: var(--space-1);
+            white-space: nowrap;
+        }
+        
+        .quick-filter-btn:hover {
+            background: var(--primary-50);
+            border-color: var(--primary-300);
+            color: var(--primary-700);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        
+        .quick-filter-btn.active {
+            background: var(--primary-500);
+            border-color: var(--primary-500);
+            color: white;
+            box-shadow: var(--shadow-md);
+        }
+        
+        .quick-filter-btn.active:hover {
+            background: var(--primary-600);
+            border-color: var(--primary-600);
+            transform: translateY(-1px);
+        }
+        
         /* Enhanced Responsive Design */
         @media (max-width: 768px) {
             .container {
@@ -1039,23 +1077,14 @@
                     </div>
                 </div>
                 
-                <div class="input-row">
-                    <div class="form-group">
-                        <label for="usageScenario">Usage Type:</label>
-                        <select id="usageScenario">
-                            <option value="custom">Custom</option>
-                            <option value="chatbot">Chat Bot</option>
-                            <option value="content">Content Generation</option>
-                            <option value="code">Code Assistant</option>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="providerFilter">Show Only:</label>
-                        <select id="providerFilter">
-                            <option value="all">All Providers</option>
-                        </select>
-                    </div>
+                <div class="form-group">
+                    <label for="usageScenario">Usage Type:</label>
+                    <select id="usageScenario">
+                        <option value="custom">Custom</option>
+                        <option value="chatbot">Chat Bot</option>
+                        <option value="content">Content Generation</option>
+                        <option value="code">Code Assistant</option>
+                    </select>
                 </div>
                 
                 <button type="submit" class="calculate-btn">Calculate</button>
@@ -1073,6 +1102,31 @@
                     <button type="button" id="selectNoneBtn" class="bulk-btn">Select None</button>
                 </div>
             </div>
+            
+            <!-- Provider Filter Section -->
+            <div class="filter-section" style="margin-bottom: 20px; padding: 15px; background: var(--gray-50); border-radius: var(--radius-lg); border: 1px solid var(--gray-200);">
+                <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-start;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <label for="providerFilter" style="margin-bottom: 8px; font-size: 0.875rem; font-weight: 600; color: var(--gray-700);">Show Only:</label>
+                        <select id="providerFilter" style="width: 100%; margin-bottom: 0;">
+                            <option value="all">All Providers</option>
+                        </select>
+                    </div>
+                    <div style="flex: 2; min-width: 250px;">
+                        <label style="margin-bottom: 8px; font-size: 0.875rem; font-weight: 600; color: var(--gray-700); display: block;">Quick Filters:</label>
+                        <div class="quick-filters" style="display: flex; flex-wrap: wrap; gap: 6px;">
+                            <button type="button" class="quick-filter-btn" data-provider="all">All</button>
+                            <button type="button" class="quick-filter-btn" data-provider="OpenAI">OpenAI</button>
+                            <button type="button" class="quick-filter-btn" data-provider="Anthropic">Anthropic</button>
+                            <button type="button" class="quick-filter-btn" data-provider="Google">Google</button>
+                            <button type="button" class="quick-filter-btn" data-provider="Mistral">Mistral</button>
+                            <button type="button" class="quick-filter-btn" data-provider="xAI">xAI</button>
+                            <button type="button" class="quick-filter-btn" data-provider="DeepSeek">DeepSeek</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="form-group" style="margin-bottom: 15px;">
                 <input type="text" id="modelSearch" placeholder="Search: gpt-4, provider:openai, model:claude, anthropic,google" style="margin-bottom: 0;">
             </div>
