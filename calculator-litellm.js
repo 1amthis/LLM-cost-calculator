@@ -2,6 +2,227 @@
 let modelPricing = {};
 let isDataLoaded = false;
 
+// Provider information database - Updated January 2025
+const providerInfo = {
+    'OpenAI': {
+        website: 'https://openai.com',
+        description: 'Leading AI research company developing advanced language models with dual paradigms: pre-training (GPT series) and reasoning (O-series), pushing the boundaries of AI capabilities.',
+        specialties: ['Advanced Reasoning', 'Code Generation', 'Multimodal AI', 'API Services'],
+        founded: '2015',
+        keyModels: ['GPT-4.1', 'GPT-4.5', 'GPT-4o', 'O3-Pro', 'O4-Mini']
+    },
+    'Anthropic': {
+        website: 'https://anthropic.com',
+        description: 'AI safety company building responsible AI systems focused on humanity\'s long-term well-being, with emphasis on transparency and ethical development.',
+        specialties: ['AI Safety', 'Responsible AI', 'Long Context', 'Enterprise Solutions'],
+        founded: '2021',
+        keyModels: ['Claude Opus 4', 'Claude Sonnet 4', 'Claude Haiku 3.5']
+    },
+    'Google': {
+        website: 'https://ai.google',
+        description: 'Google\'s AI division focused on making AI helpful for everyone through multimodal models and responsible development across products, research, and enterprise tools.',
+        specialties: ['Multimodal AI', 'Search Integration', 'Scientific Research', 'Productivity Tools'],
+        founded: '1998',
+        keyModels: ['Gemini 2.5 Pro', 'Gemini 2.5 Flash', 'Gemini 2.0 Flash', 'Gemma', 'Veo']
+    },
+    'Google Vertex': {
+        website: 'https://cloud.google.com/vertex-ai',
+        description: 'Google Cloud\'s comprehensive AI platform providing enterprise-grade infrastructure for AI model development, deployment, and management with MLOps capabilities.',
+        specialties: ['Enterprise AI', 'MLOps', 'Custom Training', 'AI Development Platform'],
+        founded: '2021',
+        keyModels: ['Gemini Pro', 'Gemini Flash', 'Text Bison', 'PaLM 2']
+    },
+    'Azure': {
+        website: 'https://azure.microsoft.com/en-us/products/ai-services/openai-service',
+        description: 'Microsoft\'s cloud platform offering OpenAI models with enterprise security, 100+ compliance certifications, and responsible AI safeguards for business applications.',
+        specialties: ['Enterprise Security', 'Compliance', 'Responsible AI', 'Business Integration'],
+        founded: '2010',
+        keyModels: ['GPT-4', 'GPT-4 Turbo', 'GPT-3.5', 'DALL-E', 'Whisper']
+    },
+    'AWS Bedrock': {
+        website: 'https://aws.amazon.com/bedrock',
+        description: 'Amazon\'s fully managed generative AI service providing access to 100+ foundation models from leading AI companies with enterprise security and cost optimization.',
+        specialties: ['Multi-Provider Models', 'Enterprise Security', 'Cost Optimization', 'Managed AI Service'],
+        founded: '2023',
+        keyModels: ['Claude', 'Llama', 'Titan', 'Jurassic', 'Mistral']
+    },
+    'Mistral': {
+        website: 'https://mistral.ai',
+        description: 'European AI company developing frontier AI with focus on digital sovereignty, privacy-first approach, and customizable models deployable across various environments.',
+        specialties: ['Digital Sovereignty', 'Privacy-First', 'Customizable AI', 'European AI'],
+        founded: '2023',
+        keyModels: ['Mistral Large', 'Mistral Small', 'Codestral', 'Le Chat']
+    },
+    'Cohere': {
+        website: 'https://cohere.com',
+        description: 'Enterprise AI platform providing secure, customizable language models optimized for business applications with strong RAG capabilities and multilingual support.',
+        specialties: ['Enterprise AI', 'RAG Systems', 'Multilingual Models', 'Custom Fine-tuning'],
+        founded: '2019',
+        keyModels: ['Command R+', 'Command R', 'Aya Expanse', 'Embed', 'Rerank']
+    },
+    'Together AI': {
+        website: 'https://together.ai',
+        description: 'AI acceleration cloud platform providing comprehensive generative AI infrastructure with 200+ open-source models, custom inference optimizations, and cost-effective solutions.',
+        specialties: ['Open Source Models', 'Custom Inference', 'GPU Clusters', 'Cost-Effective AI'],
+        founded: '2022',
+        keyModels: ['Llama 3', 'Mixtral', 'Code Llama', 'Qwen', 'RedPajama']
+    },
+    'Groq': {
+        website: 'https://groq.com',
+        description: 'AI inference company with custom LPU™ (Linear Processing Unit) hardware delivering ultra-fast, sub-millisecond latency AI inference with consistent performance at scale.',
+        specialties: ['Ultra-Fast Inference', 'Custom Hardware (LPU™)', 'Low Latency', 'Consistent Performance'],
+        founded: '2016',
+        keyModels: ['Llama 3', 'Mixtral', 'Gemma', 'CodeLlama']
+    },
+    'Hugging Face': {
+        website: 'https://huggingface.co',
+        description: 'The AI community platform building the future with 1M+ models, 250K+ datasets, collaborative tools, and open-source libraries for democratizing machine learning.',
+        specialties: ['Open Source Community', 'Model Hub', 'Collaborative Platform', 'ML Libraries'],
+        founded: '2016',
+        keyModels: ['Transformers', 'Diffusers', 'Community Models', 'BLOOM']
+    },
+    'Replicate': {
+        website: 'https://replicate.com',
+        description: 'AI platform enabling developers to run, fine-tune, and deploy ML models through simple APIs with automatic scaling and granular pay-per-second billing.',
+        specialties: ['Simple APIs', 'Auto-scaling', 'Pay-per-second', 'Easy Deployment'],
+        founded: '2019',
+        keyModels: ['Community Models', 'Stable Diffusion', 'Llama', 'Custom Models']
+    },
+    'Fireworks': {
+        website: 'https://fireworks.ai',
+        description: 'Generative AI platform delivering industry-leading inference speed with real-time performance, global deployment across 15+ regions, and enterprise-grade security.',
+        specialties: ['Fastest Inference', 'Real-time Performance', 'Global Deployment', 'Model Customization'],
+        founded: '2022',
+        keyModels: ['DeepSeek', 'Llama', 'Qwen', 'Mistral', 'Custom Models']
+    },
+    'DeepInfra': {
+        website: 'https://deepinfra.com',
+        description: 'Serverless AI inference cloud providing cost-effective, auto-scaling deployment of 100+ ML models with H100/A100 GPU optimization and pay-per-use pricing.',
+        specialties: ['Serverless Inference', 'Auto-scaling', 'Cost-Effective', 'GPU Optimized'],
+        founded: '2021',
+        keyModels: ['Llama 3', 'Mixtral', 'Code Llama', '100+ ML Models']
+    },
+    'Anyscale': {
+        website: 'https://anyscale.com',
+        description: 'Scalable AI platform built by Ray creators, enabling distributed computing from laptop to thousands of nodes with end-to-end ML workflows and cost optimization.',
+        specialties: ['Distributed Computing', 'Ray Platform', 'Scalable ML', 'End-to-end Workflows'],
+        founded: '2019',
+        keyModels: ['Llama 2', 'Mistral', 'Code Llama', 'Custom Models']
+    },
+    'Perplexity': {
+        website: 'https://www.perplexity.ai',
+        description: 'AI-powered search engine serving curiosity with synthesized answers, real-time information, and citations. Processing 780M+ queries monthly with advanced reasoning models.',
+        specialties: ['AI Search', 'Real-time Information', 'Citations', 'Advanced Reasoning'],
+        founded: '2022',
+        keyModels: ['Perplexity Pro', 'GPT-4o', 'Claude', 'Gemini', 'DeepSeek-R1']
+    },
+    'xAI': {
+        website: 'https://x.ai',
+        description: 'Elon Musk\'s AI company accelerating human scientific discovery with Grok models. Built world\'s largest supercomputer "Colossus" and raised $12B+ funding by 2025.',
+        specialties: ['Scientific Discovery', 'Real-time Information', 'Government Contracts', 'Supercomputing'],
+        founded: '2023',
+        keyModels: ['Grok-4', 'Grok Heavy', 'Grok-3', 'Grok-2']
+    },
+    'DeepSeek': {
+        website: 'https://www.deepseek.com',
+        description: 'Chinese AI company founded by hedge fund High-Flyer, developing efficient reasoning models that cost 98% less to train than GPT-4. Topped iOS App Store in 2025.',
+        specialties: ['Cost-Efficient Training', 'Advanced Reasoning', 'Mathematics', 'Open Source'],
+        founded: '2023',
+        keyModels: ['DeepSeek-R1-0528', 'DeepSeek-R1', 'DeepSeek-V3', 'DeepSeek-Coder']
+    },
+    'OpenRouter': {
+        website: 'https://openrouter.ai',
+        description: 'AI marketplace by OpenSea co-founder Alex Atallah, providing unified API access to 400+ models. Valued at $500M with $100M annual revenue in 2025.',
+        specialties: ['API Marketplace', 'Model Routing', 'Developer Platform', 'Multi-Provider'],
+        founded: '2023',
+        keyModels: ['400+ Models', 'GPT-4', 'Claude', 'Gemini', 'DeepSeek']
+    },
+    'Ollama': {
+        website: 'https://ollama.com',
+        description: 'Y Combinator-backed platform for running LLMs locally on macOS, Windows, and Linux. Offers complete privacy with models running entirely on user hardware.',
+        specialties: ['Local Deployment', 'Privacy-First', 'Cross-Platform', 'Multimodal Support'],
+        founded: '2021',
+        keyModels: ['Llama 3.3', 'DeepSeek-R1', 'Phi-4', 'Gemma 3', 'Mistral Small 3.1']
+    },
+    'Databricks': {
+        website: 'https://databricks.com',
+        description: 'Data and AI platform providing foundation models and MLOps capabilities for enterprise data teams with focus on data lakehouse architecture.',
+        specialties: ['Enterprise Data', 'MLOps', 'Data Lakehouse', 'Foundation Models'],
+        founded: '2013',
+        keyModels: ['DBRX', 'Dolly', 'Foundation Models', 'Custom Models']
+    },
+    'Cloudflare Workers AI': {
+        website: 'https://developers.cloudflare.com/workers-ai',
+        description: 'Serverless AI inference platform running on Cloudflare\'s global network, providing fast, cost-effective access to various AI models.',
+        specialties: ['Serverless AI', 'Global Network', 'Edge Computing', 'Low Latency'],
+        founded: '2023',
+        keyModels: ['Llama 2', 'Mistral', 'CodeLlama', 'Whisper']
+    },
+    'Cerebras': {
+        website: 'https://cerebras.net',
+        description: 'AI computing company with wafer-scale processors delivering exceptional performance for training and inference of large language models.',
+        specialties: ['Wafer-Scale Computing', 'High Performance', 'AI Training', 'Fast Inference'],
+        founded: '2016',
+        keyModels: ['Llama 3', 'Mistral', 'Custom Models']
+    },
+    'Nvidia NIM': {
+        website: 'https://developer.nvidia.com/nim',
+        description: 'NVIDIA\'s inference microservices providing optimized deployment of AI models with enterprise-grade security and performance.',
+        specialties: ['Optimized Inference', 'Enterprise Security', 'Microservices', 'GPU Acceleration'],
+        founded: '2024',
+        keyModels: ['Llama 3', 'Mistral', 'Nemotron', 'Various Models']
+    },
+    'Moonshot AI': {
+        website: 'https://moonshot.cn',
+        description: 'Chinese AI company developing Kimi models with ultra-long context capabilities and multimodal understanding for Chinese and English languages.',
+        specialties: ['Ultra-Long Context', 'Multimodal', 'Chinese Language', 'Kimi Assistant'],
+        founded: '2023',
+        keyModels: ['Kimi', 'Moonshot-v1', 'Long Context Models']
+    },
+    'Novita AI': {
+        website: 'https://novita.ai',
+        description: 'Cloud-based AI platform providing GPU infrastructure and model hosting services with focus on image generation and LLM inference.',
+        specialties: ['GPU Cloud', 'Image Generation', 'Model Hosting', 'API Services'],
+        founded: '2023',
+        keyModels: ['Stable Diffusion', 'Llama', 'Various Models']
+    },
+    'Predibase': {
+        website: 'https://predibase.com',
+        description: 'ML platform focused on fine-tuning and serving custom models with LoRA adapters, providing cost-effective model customization.',
+        specialties: ['Model Fine-tuning', 'LoRA Adapters', 'Custom Models', 'Cost-Effective'],
+        founded: '2022',
+        keyModels: ['Custom Fine-tuned Models', 'Llama', 'Mistral']
+    },
+    'Dashscope': {
+        website: 'https://dashscope.aliyun.com',
+        description: 'Alibaba Cloud\'s AI model service providing access to Qwen models and other AI capabilities with focus on Chinese language processing.',
+        specialties: ['Chinese Language', 'Alibaba Ecosystem', 'Qwen Models', 'Cloud Services'],
+        founded: '2023',
+        keyModels: ['Qwen-Turbo', 'Qwen-Plus', 'Qwen-Max', 'Various Qwen Models']
+    },
+    'vLLM': {
+        website: 'https://vllm.readthedocs.io',
+        description: 'High-throughput serving engine for large language models with memory-efficient attention and optimized inference performance.',
+        specialties: ['High Throughput', 'Memory Efficient', 'Optimized Inference', 'Open Source'],
+        founded: '2023',
+        keyModels: ['Various Open Source Models', 'Llama', 'Mistral', 'Custom Models']
+    },
+    'Voyage AI': {
+        website: 'https://www.voyageai.com',
+        description: 'AI company specializing in embedding models and retrieval systems, providing high-quality embeddings for various domains and languages.',
+        specialties: ['Embeddings', 'Retrieval Systems', 'Domain-Specific', 'Multilingual'],
+        founded: '2023',
+        keyModels: ['Voyage-Large', 'Voyage-Code', 'Voyage-Lite', 'Domain Embeddings']
+    },
+    'Jina AI': {
+        website: 'https://jina.ai',
+        description: 'Neural search company providing embedding models, reranking, and multimodal AI solutions for search and recommendation systems.',
+        specialties: ['Neural Search', 'Embeddings', 'Multimodal AI', 'Reranking'],
+        founded: '2020',
+        keyModels: ['Jina Embeddings', 'Jina Reranker', 'CLIP Models', 'Reader API']
+    }
+};
+
 // Load pricing data from LiteLLM
 async function loadPricingData() {
     try {
@@ -37,7 +258,22 @@ async function loadPricingData() {
                     'anyscale': 'Anyscale',
                     'perplexity': 'Perplexity',
                     'fireworks_ai': 'Fireworks',
-                    'replicate': 'Replicate'
+                    'replicate': 'Replicate',
+                    'xai': 'xAI',
+                    'deepseek': 'DeepSeek',
+                    'openrouter': 'OpenRouter',
+                    'ollama': 'Ollama',
+                    'databricks': 'Databricks',
+                    'cloudflare': 'Cloudflare Workers AI',
+                    'cerebras': 'Cerebras',
+                    'nvidia_nim': 'Nvidia NIM',
+                    'moonshot': 'Moonshot AI',
+                    'novita': 'Novita AI',
+                    'predibase': 'Predibase',
+                    'dashscope': 'Dashscope',
+                    'vllm': 'vLLM',
+                    'voyage': 'Voyage AI',
+                    'jina': 'Jina AI'
                 };
                 
                 provider = providerMap[litellmProvider] || 
@@ -450,7 +686,10 @@ function generateModelSelector(searchTerm = '') {
         models.sort((a, b) => (a.inputCost + a.outputCost) - (b.inputCost + b.outputCost));
         
         providerSection.innerHTML = `
-            <div class="provider-header">${provider}</div>
+            <div class="provider-header">
+                ${provider}
+                ${providerInfo[provider] ? `<button class="provider-info-btn" onclick="showProviderInfo('${provider}')" title="Learn more about ${provider}">ℹ️</button>` : ''}
+            </div>
             ${models.map(model => `
                 <label class="model-checkbox">
                     <input type="checkbox" 
@@ -994,6 +1233,59 @@ window.addEventListener('resize', function() {
     }
 });
 
+// Show provider information in a modal
+function showProviderInfo(providerName) {
+    const provider = providerInfo[providerName];
+    if (!provider) return;
+    
+    // Create modal backdrop
+    const modalBackdrop = document.createElement('div');
+    modalBackdrop.className = 'provider-modal-backdrop';
+    modalBackdrop.onclick = () => document.body.removeChild(modalBackdrop);
+    
+    // Create modal content
+    modalBackdrop.innerHTML = `
+        <div class="provider-modal" onclick="event.stopPropagation()">
+            <div class="provider-modal-header">
+                <h2>${providerName}</h2>
+                <button class="provider-modal-close" onclick="document.body.removeChild(this.closest('.provider-modal-backdrop'))">&times;</button>
+            </div>
+            <div class="provider-modal-content">
+                <div class="provider-description">
+                    <p>${provider.description}</p>
+                </div>
+                
+                <div class="provider-details">
+                    <div class="provider-detail-item">
+                        <strong>Founded:</strong> ${provider.founded}
+                    </div>
+                    <div class="provider-detail-item">
+                        <strong>Specialties:</strong>
+                        <div class="provider-specialties">
+                            ${provider.specialties.map(specialty => `<span class="specialty-tag">${specialty}</span>`).join('')}
+                        </div>
+                    </div>
+                    <div class="provider-detail-item">
+                        <strong>Key Models:</strong>
+                        <div class="provider-models">
+                            ${provider.keyModels.map(model => `<span class="model-tag">${model}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="provider-actions">
+                    <a href="${provider.website}" target="_blank" rel="noopener noreferrer" class="provider-website-btn">
+                        🌐 Visit Website
+                    </a>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modalBackdrop);
+}
+
 // Global functions for HTML onclick handlers
 window.toggleModelSelection = toggleModelSelection;
 window.toggleCalculationMode = toggleCalculationMode;
+window.showProviderInfo = showProviderInfo;
