@@ -377,6 +377,11 @@ function formatNumber(number) {
     return new Intl.NumberFormat('en-US').format(number);
 }
 
+function truncateLabel(text, maxLength) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength - 3) + '...';
+}
+
 // Get unique providers
 function getProviders() {
     const providers = new Set();
@@ -854,13 +859,24 @@ function createMainChart() {
         // Sort by max queries (descending - most queries first)
         const sortedModels = modelResults.sort((a, b) => b.maxQueries - a.maxQueries);
         
+        // Limit chart to top 15 models for readability
+        const chartModels = sortedModels.slice(0, 15);
+        
+        // Show note if we're limiting models
+        const chartNote = document.getElementById('chartNote');
+        if (sortedModels.length > 15) {
+            chartNote.style.display = 'block';
+        } else {
+            chartNote.style.display = 'none';
+        }
+        
         mainChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: sortedModels.map(m => `${m.model} (${m.provider})`),
+                labels: chartModels.map(m => truncateLabel(`${m.model} (${m.provider})`, 25)),
                 datasets: [{
                     label: 'Queries Possible',
-                    data: sortedModels.map(m => m.maxQueries),
+                    data: chartModels.map(m => m.maxQueries),
                     backgroundColor: (ctx) => {
                         const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
                         gradient.addColorStop(0, '#22c55e');
@@ -902,7 +918,7 @@ function createMainChart() {
                         displayColors: false,
                         callbacks: {
                             label: function(context) {
-                                const model = sortedModels[context.dataIndex];
+                                const model = chartModels[context.dataIndex];
                                 return [
                                     `Queries: ${formatNumber(context.parsed.x)}`,
                                     `Cost: ${formatCurrency(model.actualTotalCost)}`,
@@ -933,7 +949,12 @@ function createMainChart() {
                         },
                         ticks: {
                             font: { size: 10, weight: '500' },
-                            color: '#374151'
+                            color: '#374151',
+                            maxRotation: 0,
+                            callback: function(value, index) {
+                                const label = this.getLabelForValue(value);
+                                return truncateLabel(label, 20);
+                            }
                         }
                     }
                 }
@@ -956,13 +977,24 @@ function createMainChart() {
         // Sort by total cost
         const sortedModels = modelResults.sort((a, b) => a.totalCost - b.totalCost);
         
+        // Limit chart to top 15 models for readability
+        const chartModels = sortedModels.slice(0, 15);
+        
+        // Show note if we're limiting models
+        const chartNote = document.getElementById('chartNote');
+        if (sortedModels.length > 15) {
+            chartNote.style.display = 'block';
+        } else {
+            chartNote.style.display = 'none';
+        }
+        
         mainChart = new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: sortedModels.map(m => `${m.model} (${m.provider})`),
+                labels: chartModels.map(m => truncateLabel(`${m.model} (${m.provider})`, 25)),
                 datasets: [{
                     label: 'Input Cost',
-                    data: sortedModels.map(m => m.totalInputCost),
+                    data: chartModels.map(m => m.totalInputCost),
                     backgroundColor: (ctx) => {
                         const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
                         gradient.addColorStop(0, '#64748b');
@@ -992,7 +1024,7 @@ function createMainChart() {
                     stack: 'cost'
                 }, {
                     label: 'Output Cost', 
-                    data: sortedModels.map(m => m.totalOutputCost),
+                    data: chartModels.map(m => m.totalOutputCost),
                     backgroundColor: (ctx) => {
                         const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
                         gradient.addColorStop(0, '#0ea5e9');
@@ -1039,7 +1071,7 @@ function createMainChart() {
                             },
                             afterBody: function(context) {
                                 const dataIndex = context[0].dataIndex;
-                                const model = sortedModels[dataIndex];
+                                const model = chartModels[dataIndex];
                                 return `Total: ${formatCurrency(model.totalCost)}`;
                             }
                         }
@@ -1068,7 +1100,12 @@ function createMainChart() {
                         },
                         ticks: {
                             font: { size: 10, weight: '500' },
-                            color: '#374151'
+                            color: '#374151',
+                            maxRotation: 0,
+                            callback: function(value, index) {
+                                const label = this.getLabelForValue(value);
+                                return truncateLabel(label, 20);
+                            }
                         }
                     }
                 }
@@ -1078,9 +1115,14 @@ function createMainChart() {
 }
 
 // Generate smart recommendations
+let allRecommendations = [];
+let showingAll = false;
+
 function generateRecommendations() {
     if (selectedModels.size === 0) {
         document.getElementById('recommendationsContent').innerHTML = '<p>Select some models above to see recommendations.</p>';
+        document.getElementById('showMoreBtn').style.display = 'none';
+        document.getElementById('showLessBtn').style.display = 'none';
         return;
     }
     
@@ -1090,13 +1132,11 @@ function generateRecommendations() {
     const timeframe = document.getElementById('timeframe').value || 'monthly';
     const budget = parseFloat(document.getElementById('budget').value) || 20.00;
     
-    const recommendationsContainer = document.getElementById('recommendationsContent');
-    
     if (isBudgetMode) {
         // Budget mode: Show ranked list by capacity (max queries)
         const maxQueries = queries > 0 ? queries : null;
         
-        const results = Array.from(selectedModels).map(modelId => {
+        allRecommendations = Array.from(selectedModels).map(modelId => {
             try {
                 return calculateCapacity(modelId, budget, inputTokens, outputTokens, timeframe, maxQueries);
             } catch (error) {
@@ -1104,15 +1144,47 @@ function generateRecommendations() {
             }
         }).filter(r => r !== null);
         
-        if (results.length === 0) {
-            recommendationsContainer.innerHTML = '<p>No valid models selected.</p>';
+        if (allRecommendations.length === 0) {
+            document.getElementById('recommendationsContent').innerHTML = '<p>No valid models selected.</p>';
             return;
         }
         
         // Sort by max queries (descending - highest capacity first)
-        results.sort((a, b) => b.maxQueries - a.maxQueries);
+        allRecommendations.sort((a, b) => b.maxQueries - a.maxQueries);
         
-        recommendationsContainer.innerHTML = results.map((result, index) => `
+    } else {
+        // Standard mode: Show ranked list by cost (cheapest to most expensive)
+        allRecommendations = Array.from(selectedModels).map(modelId => {
+            try {
+                return calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
+            } catch (error) {
+                return null;
+            }
+        }).filter(r => r !== null);
+        
+        if (allRecommendations.length === 0) {
+            document.getElementById('recommendationsContent').innerHTML = '<p>No valid models selected.</p>';
+            return;
+        }
+        
+        // Sort by total cost (ascending - cheapest first)
+        allRecommendations.sort((a, b) => a.totalCost - b.totalCost);
+    }
+    
+    renderRecommendations();
+}
+
+function renderRecommendations() {
+    const recommendationsContainer = document.getElementById('recommendationsContent');
+    const showMoreBtn = document.getElementById('showMoreBtn');
+    const showLessBtn = document.getElementById('showLessBtn');
+    const totalCount = document.getElementById('totalCount');
+    
+    const displayLimit = showingAll ? allRecommendations.length : 5;
+    const resultsToShow = allRecommendations.slice(0, displayLimit);
+    
+    if (isBudgetMode) {
+        recommendationsContainer.innerHTML = resultsToShow.map((result, index) => `
             <div class="recommendation-item ${index === 0 ? 'best' : ''}">
                 <div>
                     <div class="recommendation-label">${index + 1}. ${result.model}</div>
@@ -1124,26 +1196,8 @@ function generateRecommendations() {
                 </div>
             </div>
         `).join('');
-        
     } else {
-        // Standard mode: Show ranked list by cost (cheapest to most expensive)
-        const results = Array.from(selectedModels).map(modelId => {
-            try {
-                return calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
-            } catch (error) {
-                return null;
-            }
-        }).filter(r => r !== null);
-        
-        if (results.length === 0) {
-            recommendationsContainer.innerHTML = '<p>No valid models selected.</p>';
-            return;
-        }
-        
-        // Sort by total cost (ascending - cheapest first)
-        results.sort((a, b) => a.totalCost - b.totalCost);
-        
-        recommendationsContainer.innerHTML = results.map((result, index) => `
+        recommendationsContainer.innerHTML = resultsToShow.map((result, index) => `
             <div class="recommendation-item ${index === 0 ? 'best' : ''}">
                 <div>
                     <div class="recommendation-label">${index + 1}. ${result.model}</div>
@@ -1154,6 +1208,21 @@ function generateRecommendations() {
                 </div>
             </div>
         `).join('');
+    }
+    
+    // Show/hide buttons based on results count
+    if (allRecommendations.length > 5) {
+        totalCount.textContent = allRecommendations.length;
+        if (showingAll) {
+            showMoreBtn.style.display = 'none';
+            showLessBtn.style.display = 'inline-block';
+        } else {
+            showMoreBtn.style.display = 'inline-block';
+            showLessBtn.style.display = 'none';
+        }
+    } else {
+        showMoreBtn.style.display = 'none';
+        showLessBtn.style.display = 'none';
     }
 }
 
@@ -1274,6 +1343,16 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Provider collapse/expand buttons
     document.getElementById('expandAllBtn').addEventListener('click', expandAllProviders);
     document.getElementById('collapseAllBtn').addEventListener('click', collapseAllProviders);
+    
+    // Recommendations show more/less buttons
+    document.getElementById('showMoreBtn').addEventListener('click', () => {
+        showingAll = true;
+        renderRecommendations();
+    });
+    document.getElementById('showLessBtn').addEventListener('click', () => {
+        showingAll = false;
+        renderRecommendations();
+    });
     
     // Model search functionality
     document.getElementById('modelSearch').addEventListener('input', function(e) {

@@ -412,6 +412,66 @@
         .recommendation-item:nth-child(3) .recommendation-savings {
             color: #9a3412; /* Darker orange for bronze background */
         }
+
+        .recommendations-header {
+            margin-bottom: var(--space-3);
+        }
+
+        .recommendations-controls {
+            display: flex;
+            justify-content: center;
+            gap: var(--space-2);
+        }
+
+        .show-more-btn, .show-less-btn {
+            background: var(--primary-500);
+            color: white;
+            border: none;
+            padding: var(--space-2) var(--space-4);
+            border-radius: var(--radius-md);
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .show-more-btn:hover, .show-less-btn:hover {
+            background: var(--primary-600);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .recommendations-scroll {
+            max-height: 400px;
+            overflow-y: auto;
+            padding-right: var(--space-2);
+        }
+
+        .recommendations-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .recommendations-scroll::-webkit-scrollbar-track {
+            background: var(--gray-100);
+            border-radius: var(--radius-sm);
+        }
+
+        .recommendations-scroll::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: var(--radius-sm);
+        }
+
+        .recommendations-scroll::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+
+        .chart-note {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            text-align: center;
+            margin-bottom: var(--space-2);
+            font-style: italic;
+        }
         
         /* Modern Mode Toggle Styles */
         .mode-toggle-container {
@@ -1031,7 +1091,13 @@
                 <!-- Recommendations -->
                 <div class="recommendations-card">
                     <h3 id="recommendationsTitle">📋 Model Rankings (by Cost)</h3>
-                    <div id="recommendationsContent">
+                    <div class="recommendations-header">
+                        <div class="recommendations-controls">
+                            <button id="showMoreBtn" class="show-more-btn" style="display: none;">Show All (<span id="totalCount">0</span>)</button>
+                            <button id="showLessBtn" class="show-less-btn" style="display: none;">Show Top 5</button>
+                        </div>
+                    </div>
+                    <div id="recommendationsContent" class="recommendations-scroll">
                         <p>Select some models above to see recommendations.</p>
                     </div>
                 </div>
@@ -1039,6 +1105,9 @@
                 <!-- Cost Overview Chart -->
                 <div class="chart-card">
                     <h3 id="chartTitle">📊 Cost Analysis</h3>
+                    <div id="chartNote" class="chart-note" style="display: none;">
+                        Showing top 15 models for better readability
+                    </div>
                     <div class="chart-wrapper">
                         <canvas id="mainChart"></canvas>
                     </div>
