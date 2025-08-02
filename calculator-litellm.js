@@ -328,6 +328,7 @@ async function loadPricingData() {
         
     } catch (error) {
         console.error('Failed to load LiteLLM pricing data:', error);
+        showError('Unable to load live pricing data. Using fallback data. Some models may be missing.');
         // Fallback to static data
         loadStaticData();
     }
@@ -379,6 +380,43 @@ let mainChart = null;
 let currentProviderFilter = 'all';
 let selectedModels = new Set();
 let isBudgetMode = false;
+let searchTimeout = null;
+
+// Error handling functions
+function showError(message) {
+    const errorContainer = document.getElementById('errorMessage');
+    const errorText = document.getElementById('errorText');
+    
+    if (errorContainer && errorText) {
+        errorText.textContent = message;
+        errorContainer.classList.remove('hidden');
+        
+        // Auto-hide after 5 seconds
+        setTimeout(() => {
+            hideError();
+        }, 5000);
+    }
+}
+
+function hideError() {
+    const errorContainer = document.getElementById('errorMessage');
+    if (errorContainer) {
+        errorContainer.classList.add('hidden');
+    }
+}
+
+// Debounced search function
+function debounceSearch(searchTerm) {
+    // Clear existing timeout
+    if (searchTimeout) {
+        clearTimeout(searchTimeout);
+    }
+    
+    // Set new timeout
+    searchTimeout = setTimeout(() => {
+        generateModelSelector(searchTerm);
+    }, 300); // 300ms delay
+}
 
 // Utility functions
 function formatCurrency(amount) {
@@ -443,11 +481,46 @@ function toggleCalculationMode() {
     updateAnalysis();
 }
 
+// Input validation helper
+function validateInputs(queries, inputTokens, outputTokens, budget = null) {
+    if (!queries || queries < 0 || !Number.isInteger(Number(queries))) {
+        return 'Queries must be a positive whole number';
+    }
+    
+    if (!inputTokens || inputTokens < 1) {
+        return 'Input tokens must be at least 1';
+    }
+    
+    if (!outputTokens || outputTokens < 1) {
+        return 'Output tokens must be at least 1';
+    }
+    
+    if (budget !== null && (!budget || budget < 0.01)) {
+        return 'Budget must be at least $0.01';
+    }
+    
+    if (queries > 1000000) {
+        return 'Queries cannot exceed 1,000,000';
+    }
+    
+    if (inputTokens > 1000000 || outputTokens > 1000000) {
+        return 'Token counts cannot exceed 1,000,000';
+    }
+    
+    return null; // No validation errors
+}
+
 // Calculate cost for a single model
 function calculateCost(modelId, queries, inputTokens, outputTokens, timeframe) {
     const model = modelPricing[modelId];
     if (!model) {
         throw new Error('Model not found');
+    }
+    
+    // Validate inputs
+    const validationError = validateInputs(queries, inputTokens, outputTokens);
+    if (validationError) {
+        throw new Error(validationError);
     }
 
     // Calculate cost per query
@@ -507,6 +580,12 @@ function calculateCapacity(modelId, budget, inputTokens, outputTokens, timeframe
     const model = modelPricing[modelId];
     if (!model) {
         throw new Error('Model not found');
+    }
+    
+    // Validate inputs (queries can be null in budget mode)
+    const validationError = validateInputs(maxQueries || 1, inputTokens, outputTokens, budget);
+    if (validationError) {
+        throw new Error(validationError);
     }
 
     // Calculate cost per query
@@ -1264,8 +1343,40 @@ function renderRecommendations() {
 
 // Update analysis when filters change
 function updateAnalysis() {
-    createMainChart();
-    generateRecommendations();
+    // Clear any previous errors
+    hideError();
+    
+    // Validate inputs before processing
+    const queries = parseInt(document.getElementById('queries').value) || 0;
+    const inputTokens = parseInt(document.getElementById('inputTokens').value) || 0;
+    const outputTokens = parseInt(document.getElementById('outputTokens').value) || 0;
+    const budget = parseFloat(document.getElementById('budget').value) || 0;
+    
+    const validationError = validateInputs(
+        queries, 
+        inputTokens, 
+        outputTokens, 
+        isBudgetMode ? budget : null
+    );
+    
+    if (validationError) {
+        showError(validationError);
+        return;
+    }
+    
+    if (selectedModels.size === 0) {
+        // Don't show error for no models selected, just clear charts
+        createMainChart();
+        generateRecommendations();
+        return;
+    }
+    
+    try {
+        createMainChart();
+        generateRecommendations();
+    } catch (error) {
+        showError('Error calculating costs: ' + error.message);
+    }
 }
 
 // Handle usage scenario changes
@@ -1420,10 +1531,10 @@ document.addEventListener('DOMContentLoaded', async function() {
         renderRecommendations();
     });
     
-    // Model search functionality
+    // Model search functionality with debouncing
     document.getElementById('modelSearch').addEventListener('input', function(e) {
         const searchTerm = e.target.value.trim();
-        generateModelSelector(searchTerm);
+        debounceSearch(searchTerm);
     });
     
     // Auto-update analysis when parameters change
