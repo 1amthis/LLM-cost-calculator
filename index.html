@@ -152,7 +152,12 @@
 
                 <!-- Cost Overview Chart -->
                 <div class="chart-card">
-                    <h3 id="chartTitle">📊 Cost Analysis</h3>
+                    <div class="chart-header">
+                        <h3 id="chartTitle">📊 Cost Analysis</h3>
+                        <button id="exportCsvBtn" class="export-btn" onclick="exportAnalysisToCSV()" style="display: none;">
+                            📊 Export CSV
+                        </button>
+                    </div>
                     <div id="chartNote" class="chart-note" style="display: none;">
                         Showing top 15 models for better readability
                     </div>

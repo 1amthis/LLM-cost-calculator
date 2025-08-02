@@ -938,13 +938,15 @@ function collapseAllProviders() {
 // Create main analysis chart
 function createMainChart() {
     const ctx = document.getElementById('mainChart').getContext('2d');
+    const exportBtn = document.getElementById('exportCsvBtn');
     
     if (mainChart) {
         mainChart.destroy();
     }
     
     if (selectedModels.size === 0) {
-        // Clear chart if no models selected
+        // Clear chart if no models selected and hide export button
+        if (exportBtn) exportBtn.style.display = 'none';
         return;
     }
     
@@ -969,7 +971,13 @@ function createMainChart() {
             }
         }).filter(r => r !== null);
         
-        if (modelResults.length === 0) return;
+        if (modelResults.length === 0) {
+            if (exportBtn) exportBtn.style.display = 'none';
+            return;
+        }
+        
+        // Show export button since we have valid results
+        if (exportBtn) exportBtn.style.display = 'flex';
         
         // Sort by max queries (descending - most queries first)
         const sortedModels = modelResults.sort((a, b) => b.maxQueries - a.maxQueries);
@@ -1087,7 +1095,13 @@ function createMainChart() {
             }
         }).filter(r => r !== null);
         
-        if (modelResults.length === 0) return;
+        if (modelResults.length === 0) {
+            if (exportBtn) exportBtn.style.display = 'none';
+            return;
+        }
+        
+        // Show export button since we have valid results
+        if (exportBtn) exportBtn.style.display = 'flex';
         
         // Sort by total cost
         const sortedModels = modelResults.sort((a, b) => a.totalCost - b.totalCost);
@@ -1602,7 +1616,200 @@ function showProviderInfo(providerName) {
     document.body.appendChild(modalBackdrop);
 }
 
+// CSV Export functionality
+function generateCSVContent() {
+    if (selectedModels.size === 0) {
+        showError('Please select some models to export');
+        return null;
+    }
+
+    const queries = parseInt(document.getElementById('queries').value) || 100;
+    const inputTokens = parseInt(document.getElementById('inputTokens').value) || 1000;
+    const outputTokens = parseInt(document.getElementById('outputTokens').value) || 100;
+    const timeframe = document.getElementById('timeframe').value || 'monthly';
+    const budget = parseFloat(document.getElementById('budget').value) || 20.00;
+
+    let results = [];
+    let headers = [];
+    
+    if (isBudgetMode) {
+        // Budget mode CSV structure
+        headers = [
+            'Rank',
+            'Model Name', 
+            'Provider',
+            'Max Queries Possible',
+            'Cost Per Query',
+            'Total Cost Used',
+            'Budget Remaining',
+            'Budget Utilization %',
+            'Input Cost Per 1M Tokens',
+            'Output Cost Per 1M Tokens',
+            'Input Tokens Per Query',
+            'Output Tokens Per Query',
+            'Total Input Tokens',
+            'Total Output Tokens',
+            'Period',
+            'Budget Limit',
+            'Max Token Limit'
+        ];
+
+        const maxQueries = queries > 0 ? queries : null;
+        
+        results = Array.from(selectedModels).map(modelId => {
+            try {
+                const result = calculateCapacity(modelId, budget, inputTokens, outputTokens, timeframe, maxQueries);
+                // Add per-million token costs from model pricing
+                const model = modelPricing[modelId];
+                if (model) {
+                    result.inputCostPer1M = model.inputCost;
+                    result.outputCostPer1M = model.outputCost;
+                }
+                return result;
+            } catch (error) {
+                return null;
+            }
+        }).filter(r => r !== null);
+
+        // Sort by max queries (descending)
+        results.sort((a, b) => b.maxQueries - a.maxQueries);
+
+    } else {
+        // Standard mode CSV structure  
+        headers = [
+            'Rank',
+            'Model Name',
+            'Provider', 
+            'Total Cost',
+            'Input Cost',
+            'Output Cost',
+            'Cost Per Query',
+            'Input Cost Per Query',
+            'Output Cost Per Query',
+            'Input Cost Per 1M Tokens',
+            'Output Cost Per 1M Tokens',
+            'Queries',
+            'Input Tokens Per Query',
+            'Output Tokens Per Query',
+            'Total Input Tokens',
+            'Total Output Tokens',
+            'Period',
+            'Max Token Limit'
+        ];
+
+        results = Array.from(selectedModels).map(modelId => {
+            try {
+                const result = calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
+                // Add per-million token costs from model pricing
+                const model = modelPricing[modelId];
+                if (model) {
+                    result.inputCostPer1M = model.inputCost;
+                    result.outputCostPer1M = model.outputCost;
+                }
+                return result;
+            } catch (error) {
+                return null;
+            }
+        }).filter(r => r !== null);
+
+        // Sort by total cost (ascending - cheapest first)
+        results.sort((a, b) => a.totalCost - b.totalCost);
+    }
+
+    if (results.length === 0) {
+        showError('No valid calculation results to export');
+        return null;
+    }
+
+    // Generate CSV content
+    let csvContent = headers.join(',') + '\n';
+    
+    results.forEach((result, index) => {
+        let row = [];
+        
+        if (isBudgetMode) {
+            row = [
+                index + 1, // Rank
+                `"${result.model}"`, // Model Name (quoted for CSV safety)
+                `"${result.provider}"`, // Provider
+                result.maxQueries || 0, // Max Queries Possible
+                (result.totalCostPerQuery || 0).toFixed(6), // Cost Per Query
+                (result.actualTotalCost || 0).toFixed(6), // Total Cost Used
+                (result.remainingBudget || 0).toFixed(6), // Budget Remaining
+                (result.budgetUtilization || 0).toFixed(2), // Budget Utilization %
+                (result.inputCostPer1M || 0).toFixed(6), // Input Cost Per 1M Tokens
+                (result.outputCostPer1M || 0).toFixed(6), // Output Cost Per 1M Tokens
+                inputTokens, // Input Tokens Per Query
+                outputTokens, // Output Tokens Per Query
+                result.totalInputTokens || 0, // Total Input Tokens
+                result.totalOutputTokens || 0, // Total Output Tokens
+                result.timeframe || 'N/A', // Period
+                budget.toFixed(2), // Budget Limit
+                result.maxTokens || 'N/A' // Max Token Limit
+            ];
+        } else {
+            row = [
+                index + 1, // Rank
+                `"${result.model}"`, // Model Name (quoted for CSV safety)
+                `"${result.provider}"`, // Provider
+                (result.totalCost || 0).toFixed(6), // Total Cost
+                (result.totalInputCost || 0).toFixed(6), // Input Cost
+                (result.totalOutputCost || 0).toFixed(6), // Output Cost
+                (result.totalCostPerQuery || 0).toFixed(6), // Cost Per Query
+                (result.inputCostPerQuery || 0).toFixed(6), // Input Cost Per Query
+                (result.outputCostPerQuery || 0).toFixed(6), // Output Cost Per Query
+                (result.inputCostPer1M || 0).toFixed(6), // Input Cost Per 1M Tokens
+                (result.outputCostPer1M || 0).toFixed(6), // Output Cost Per 1M Tokens
+                result.totalQueries || 0, // Queries
+                inputTokens, // Input Tokens Per Query
+                outputTokens, // Output Tokens Per Query
+                result.totalInputTokens || 0, // Total Input Tokens
+                result.totalOutputTokens || 0, // Total Output Tokens
+                result.timeframe || 'N/A', // Period
+                result.maxTokens || 'N/A' // Max Token Limit
+            ];
+        }
+        
+        csvContent += row.join(',') + '\n';
+    });
+
+    return csvContent;
+}
+
+function exportAnalysisToCSV() {
+    const csvContent = generateCSVContent();
+    if (!csvContent) return;
+
+    // Create filename with timestamp and mode
+    const timestamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
+    const mode = isBudgetMode ? 'budget' : 'cost';
+    const timeframe = document.getElementById('timeframe').value || 'monthly';
+    const filename = `llm-${mode}-analysis-${timeframe}-${timestamp}.csv`;
+
+    // Create and trigger download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    
+    if (link.download !== undefined) {
+        const url = URL.createObjectURL(blob);
+        link.setAttribute('href', url);
+        link.setAttribute('download', filename);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        // Show success message
+        showError(`Export successful! Downloaded: ${filename}`);
+        setTimeout(() => hideError(), 3000);
+    } else {
+        showError('CSV export not supported in this browser');
+    }
+}
+
 // Global functions for HTML onclick handlers
 window.toggleModelSelection = toggleModelSelection;
 window.toggleCalculationMode = toggleCalculationMode;
 window.showProviderInfo = showProviderInfo;
+window.exportAnalysisToCSV = exportAnalysisToCSV;
