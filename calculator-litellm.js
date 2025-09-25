@@ -511,12 +511,12 @@ function validateInputs(queries, inputTokens, outputTokens, budget = null) {
 }
 
 // Calculate cost for a single model
-function calculateCost(modelId, queries, inputTokens, outputTokens, timeframe) {
+function calculateCost(modelId, queries, inputTokens, outputTokens, timeframe, externalServices = null) {
     const model = modelPricing[modelId];
     if (!model) {
         throw new Error('Model not found');
     }
-    
+
     // Validate inputs
     const validationError = validateInputs(queries, inputTokens, outputTokens);
     if (validationError) {
@@ -531,7 +531,7 @@ function calculateCost(modelId, queries, inputTokens, outputTokens, timeframe) {
     // Calculate total queries based on timeframe
     let totalQueries = queries;
     let timeMultiplier = 1;
-    
+
     switch (timeframe) {
         case 'daily':
             timeMultiplier = 1;
@@ -555,7 +555,31 @@ function calculateCost(modelId, queries, inputTokens, outputTokens, timeframe) {
     // Calculate total costs
     const totalInputCost = inputCostPerQuery * totalQueries;
     const totalOutputCost = outputCostPerQuery * totalQueries;
-    const totalCost = totalInputCost + totalOutputCost;
+    let totalCost = totalInputCost + totalOutputCost;
+
+    // Calculate external services costs
+    let externalServicesCost = 0;
+    const externalServicesBreakdown = [];
+
+    if (externalServices && externalServices.enabled) {
+        for (const service of externalServices.services) {
+            if (service.enabled && service.cost > 0) {
+                const serviceCostPer1000 = service.cost;
+                const serviceCostPerQuery = serviceCostPer1000 / 1000;
+                const serviceTotalCost = serviceCostPerQuery * totalQueries;
+
+                externalServicesCost += serviceTotalCost;
+                externalServicesBreakdown.push({
+                    name: service.name,
+                    costPer1000: serviceCostPer1000,
+                    costPerQuery: serviceCostPerQuery,
+                    totalCost: serviceTotalCost
+                });
+            }
+        }
+
+        totalCost += externalServicesCost;
+    }
 
     return {
         modelId,
@@ -564,9 +588,12 @@ function calculateCost(modelId, queries, inputTokens, outputTokens, timeframe) {
         inputCostPerQuery,
         outputCostPerQuery,
         totalCostPerQuery,
+        externalServicesCostPerQuery: externalServicesCost / (totalQueries || 1),
+        externalServicesBreakdown,
         totalQueries,
         totalInputCost,
         totalOutputCost,
+        externalServicesCost,
         totalCost,
         totalInputTokens: inputTokens * totalQueries,
         totalOutputTokens: outputTokens * totalQueries,
@@ -1088,7 +1115,8 @@ function createMainChart() {
         // Standard mode: Calculate costs (original logic)
         modelResults = Array.from(selectedModels).map(modelId => {
             try {
-                const result = calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
+                const externalServices = getExternalServicesConfig();
+                const result = calculateCost(modelId, queries, inputTokens, outputTokens, timeframe, externalServices);
                 return result;
             } catch (error) {
                 return null;
@@ -1152,12 +1180,42 @@ function createMainChart() {
                     borderSkipped: false,
                     stack: 'cost'
                 }, {
-                    label: 'Output Cost', 
+                    label: 'Output Cost',
                     data: chartModels.map(m => m.totalOutputCost),
                     backgroundColor: (ctx) => {
                         const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
                         gradient.addColorStop(0, '#0ea5e9');
                         gradient.addColorStop(1, '#0284c7');
+                        return gradient;
+                    },
+                    borderColor: 'transparent',
+                    borderWidth: 0,
+                    borderRadius: function(ctx) {
+                        const dataIndex = ctx.dataIndex;
+                        const datasets = ctx.chart.data.datasets;
+                        const hasExternalCost = datasets[2] && datasets[2].data[dataIndex] > 0;
+
+                        // If there's external services cost, don't round this segment
+                        if (hasExternalCost) {
+                            return 0;
+                        }
+                        // If no external cost, round the right side
+                        return {
+                            topLeft: 0,
+                            topRight: 8,
+                            bottomLeft: 0,
+                            bottomRight: 8
+                        };
+                    },
+                    borderSkipped: false,
+                    stack: 'cost'
+                }, {
+                    label: 'External Services',
+                    data: chartModels.map(m => m.externalServicesCost || 0),
+                    backgroundColor: (ctx) => {
+                        const gradient = ctx.chart.ctx.createLinearGradient(0, 0, ctx.chart.width, 0);
+                        gradient.addColorStop(0, '#f59e0b');
+                        gradient.addColorStop(1, '#d97706');
                         return gradient;
                     },
                     borderColor: 'transparent',
@@ -1201,7 +1259,18 @@ function createMainChart() {
                             afterBody: function(context) {
                                 const dataIndex = context[0].dataIndex;
                                 const model = chartModels[dataIndex];
-                                return `Total: ${formatCurrency(model.totalCost)}`;
+                                let afterBodyText = [`Total: ${formatCurrency(model.totalCost)}`];
+
+                                // Add external services breakdown if any
+                                if (model.externalServicesBreakdown && model.externalServicesBreakdown.length > 0) {
+                                    afterBodyText.push(''); // Empty line
+                                    afterBodyText.push('External Services:');
+                                    model.externalServicesBreakdown.forEach(service => {
+                                        afterBodyText.push(`• ${service.name}: ${formatCurrency(service.totalCost)}`);
+                                    });
+                                }
+
+                                return afterBodyText;
                             }
                         }
                     }
@@ -1285,7 +1354,8 @@ function generateRecommendations() {
         // Standard mode: Show ranked list by cost (cheapest to most expensive)
         allRecommendations = Array.from(selectedModels).map(modelId => {
             try {
-                return calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
+                const externalServices = getExternalServicesConfig();
+                return calculateCost(modelId, queries, inputTokens, outputTokens, timeframe, externalServices);
             } catch (error) {
                 return null;
             }
@@ -1555,6 +1625,18 @@ document.addEventListener('DOMContentLoaded', async function() {
     ['queries', 'inputTokens', 'outputTokens', 'timeframe', 'budget'].forEach(id => {
         document.getElementById(id).addEventListener('change', updateAnalysis);
     });
+
+    // Setup external services UI
+    setupExternalServicesUI();
+
+    // Auto-update analysis when external services change
+    ['enableExternalServices', 'enableWebSearch', 'webSearchCost', 'enableImageGeneration', 'imageGenCost', 'enableCustomService', 'customServiceName', 'customServiceCost'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', updateAnalysis);
+            element.addEventListener('input', updateAnalysis);
+        }
+    });
 });
 
 // Window resize handler
@@ -1683,9 +1765,11 @@ function generateCSVContent() {
             'Total Cost',
             'Input Cost',
             'Output Cost',
+            'External Services Cost',
             'Cost Per Query',
             'Input Cost Per Query',
             'Output Cost Per Query',
+            'External Services Cost Per Query',
             'Input Cost Per 1M Tokens',
             'Output Cost Per 1M Tokens',
             'Queries',
@@ -1694,12 +1778,14 @@ function generateCSVContent() {
             'Total Input Tokens',
             'Total Output Tokens',
             'Period',
-            'Max Token Limit'
+            'Max Token Limit',
+            'External Services Details'
         ];
 
         results = Array.from(selectedModels).map(modelId => {
             try {
-                const result = calculateCost(modelId, queries, inputTokens, outputTokens, timeframe);
+                const externalServices = getExternalServicesConfig();
+                const result = calculateCost(modelId, queries, inputTokens, outputTokens, timeframe, externalServices);
                 // Add per-million token costs from model pricing
                 const model = modelPricing[modelId];
                 if (model) {
@@ -1755,9 +1841,11 @@ function generateCSVContent() {
                 (result.totalCost || 0).toFixed(6), // Total Cost
                 (result.totalInputCost || 0).toFixed(6), // Input Cost
                 (result.totalOutputCost || 0).toFixed(6), // Output Cost
+                (result.externalServicesCost || 0).toFixed(6), // External Services Cost
                 (result.totalCostPerQuery || 0).toFixed(6), // Cost Per Query
                 (result.inputCostPerQuery || 0).toFixed(6), // Input Cost Per Query
                 (result.outputCostPerQuery || 0).toFixed(6), // Output Cost Per Query
+                (result.externalServicesCostPerQuery || 0).toFixed(6), // External Services Cost Per Query
                 (result.inputCostPer1M || 0).toFixed(6), // Input Cost Per 1M Tokens
                 (result.outputCostPer1M || 0).toFixed(6), // Output Cost Per 1M Tokens
                 result.totalQueries || 0, // Queries
@@ -1766,7 +1854,10 @@ function generateCSVContent() {
                 result.totalInputTokens || 0, // Total Input Tokens
                 result.totalOutputTokens || 0, // Total Output Tokens
                 result.timeframe || 'N/A', // Period
-                result.maxTokens || 'N/A' // Max Token Limit
+                result.maxTokens || 'N/A', // Max Token Limit
+                result.externalServicesBreakdown ?
+                    result.externalServicesBreakdown.map(s => `${s.name}:${s.totalCost.toFixed(4)}€`).join(';') :
+                    'None' // External Services Details
             ];
         }
         
@@ -1806,6 +1897,70 @@ function exportAnalysisToCSV() {
     } else {
         showError('CSV export not supported in this browser');
     }
+}
+
+// External Services Management
+function setupExternalServicesUI() {
+    const enableExternalServices = document.getElementById('enableExternalServices');
+    const externalServicesConfig = document.getElementById('externalServicesConfig');
+
+    enableExternalServices.addEventListener('change', function() {
+        if (this.checked) {
+            externalServicesConfig.style.display = 'block';
+        } else {
+            externalServicesConfig.style.display = 'none';
+        }
+    });
+}
+
+function getExternalServicesConfig() {
+    const enableExternalServices = document.getElementById('enableExternalServices');
+
+    if (!enableExternalServices.checked) {
+        return { enabled: false, services: [] };
+    }
+
+    const services = [];
+
+    // Web Search service
+    const enableWebSearch = document.getElementById('enableWebSearch');
+    const webSearchCost = document.getElementById('webSearchCost');
+    if (enableWebSearch.checked && webSearchCost.value > 0) {
+        services.push({
+            name: 'Web Search',
+            enabled: true,
+            cost: parseFloat(webSearchCost.value)
+        });
+    }
+
+    // Image Generation service
+    const enableImageGeneration = document.getElementById('enableImageGeneration');
+    const imageGenCost = document.getElementById('imageGenCost');
+    if (enableImageGeneration.checked && imageGenCost.value > 0) {
+        services.push({
+            name: 'Image Generation',
+            enabled: true,
+            cost: parseFloat(imageGenCost.value)
+        });
+    }
+
+    // Custom service
+    const enableCustomService = document.getElementById('enableCustomService');
+    const customServiceName = document.getElementById('customServiceName');
+    const customServiceCost = document.getElementById('customServiceCost');
+    if (enableCustomService.checked && customServiceCost.value > 0) {
+        const serviceName = customServiceName.value.trim() || 'Custom Service';
+        services.push({
+            name: serviceName,
+            enabled: true,
+            cost: parseFloat(customServiceCost.value)
+        });
+    }
+
+    return {
+        enabled: services.length > 0,
+        services: services
+    };
 }
 
 // Global functions for HTML onclick handlers

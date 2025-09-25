@@ -27,18 +27,43 @@ The application uses a checkbox-based model selection system organized by provid
 
 ## Cost Calculation Logic
 
-Cost calculations use the formula:
-- Input cost per query = (inputTokens / 1,000,000) × model.inputCost  
+**Base LLM Costs:**
+- Input cost per query = (inputTokens / 1,000,000) × model.inputCost
 - Output cost per query = (outputTokens / 1,000,000) × model.outputCost
-- Total cost = (cost per query) × queries × timeframe multiplier
+- LLM cost per query = input cost + output cost
+
+**External Services Costs:**
+- External service cost per query = (serviceCost / 1,000)
+- Total external services cost = sum of all enabled services × queries
+
+**Total Cost Formula:**
+- Total cost = (LLM cost per query + external services cost per query) × queries × timeframe multiplier
 
 Timeframe multipliers: daily=1, monthly=30, yearly=365, single=1
 
 ## UI Components
 
-**Analysis Dashboard**: Two-panel layout with recommendations (best options) and cost comparison chart (horizontal bar chart)
+**Analysis Dashboard**: Two-panel layout with recommendations (best options) and cost comparison chart (stacked horizontal bar chart)
 **Model Selector**: Scrollable checkbox grid organized by provider with bulk select/deselect actions
 **Parameter Form**: Input fields for queries, tokens, timeframe, and usage scenarios with preset configurations
+**External Services**: Optional section to configure additional service costs (Web Search, Image Generation, Custom Services)
+
+## External Services Feature
+
+**Configuration Options:**
+- **Web Search** (e.g., Linkup): Default 5€/1000 queries
+- **Image Generation**: Default 10€/1000 queries
+- **Custom Service**: User-defined name and cost per 1000 queries
+
+**Visual Representation:**
+- Stacked bar chart with 3 layers: Input Cost (gray), Output Cost (blue), External Services (orange)
+- Enhanced tooltips showing service-by-service cost breakdown
+- CSV export includes external services costs and details
+
+**Cost Integration:**
+- External services costs are calculated per query and scaled by timeframe
+- Added to total cost calculations across all analysis modes
+- Included in budget mode capacity calculations
 
 ## Development Commands
 

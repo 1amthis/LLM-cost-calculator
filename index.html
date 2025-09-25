@@ -80,7 +80,64 @@
                         <option value="code">Code Assistant</option>
                     </select>
                 </div>
-                
+
+                <!-- External Services Section -->
+                <div class="form-group external-services-section">
+                    <div class="section-header" style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="enableExternalServices">
+                            <span class="checkmark"></span>
+                            Enable External Services
+                        </label>
+                    </div>
+                    <div id="externalServicesConfig" class="external-services-config" style="display: none;">
+                        <div class="service-item">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="enableWebSearch" checked>
+                                <span class="checkmark"></span>
+                                Web Search (ex: Linkup)
+                            </label>
+                            <div class="service-details">
+                                <label for="webSearchCost">Cost per 1000 queries:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="webSearchCost" min="0" step="0.01" value="5.00">
+                                    <span class="unit">€</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-item">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="enableImageGeneration">
+                                <span class="checkmark"></span>
+                                Image Generation
+                            </label>
+                            <div class="service-details">
+                                <label for="imageGenCost">Cost per 1000 queries:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="imageGenCost" min="0" step="0.01" value="10.00">
+                                    <span class="unit">€</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="service-item">
+                            <label class="checkbox-wrapper">
+                                <input type="checkbox" id="enableCustomService">
+                                <span class="checkmark"></span>
+                                Custom Service
+                            </label>
+                            <div class="service-details">
+                                <label for="customServiceName">Service name:</label>
+                                <input type="text" id="customServiceName" placeholder="e.g., Translation API" style="margin-bottom: 8px;">
+                                <label for="customServiceCost">Cost per 1000 queries:</label>
+                                <div class="input-with-unit">
+                                    <input type="number" id="customServiceCost" min="0" step="0.01" value="1.00">
+                                    <span class="unit">€</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button type="submit" class="calculate-btn">Calculate</button>
             </form>
         </div>
