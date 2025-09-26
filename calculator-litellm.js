@@ -1629,12 +1629,23 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Setup external services UI
     setupExternalServicesUI();
 
+    // Setup Wikit presets UI
+    setupWikitPresetsUI();
+
     // Auto-update analysis when external services change
     ['enableExternalServices', 'enableWebSearch', 'webSearchCost', 'enableImageGeneration', 'imageGenCost', 'enableCustomService', 'customServiceName', 'customServiceCost'].forEach(id => {
         const element = document.getElementById(id);
         if (element) {
             element.addEventListener('change', updateAnalysis);
             element.addEventListener('input', updateAnalysis);
+        }
+    });
+
+    // Auto-update when Wikit presets change
+    ['enableWikitPresets', 'wikitLicense'].forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.addEventListener('change', handleWikitPresetChange);
         }
     });
 });
@@ -1911,6 +1922,59 @@ function setupExternalServicesUI() {
             externalServicesConfig.style.display = 'none';
         }
     });
+}
+
+// Wikit Presets Management
+function setupWikitPresetsUI() {
+    const enableWikitPresets = document.getElementById('enableWikitPresets');
+    const wikitPresetsConfig = document.getElementById('wikitPresetsConfig');
+
+    enableWikitPresets.addEventListener('change', function() {
+        if (this.checked) {
+            wikitPresetsConfig.style.display = 'block';
+        } else {
+            wikitPresetsConfig.style.display = 'none';
+            // Reset form when disabled
+            document.getElementById('wikitLicense').value = '';
+        }
+    });
+}
+
+function handleWikitPresetChange() {
+    const enableWikitPresets = document.getElementById('enableWikitPresets');
+    const wikitLicense = document.getElementById('wikitLicense');
+
+    if (!enableWikitPresets.checked || !wikitLicense.value) {
+        return;
+    }
+
+    const selectedOption = wikitLicense.options[wikitLicense.selectedIndex];
+    const maxQueries = parseInt(selectedOption.dataset.queries);
+    const budgetMax = parseInt(selectedOption.dataset.budget);
+
+    // Update form fields with preset values
+    const queriesField = document.getElementById('queries');
+    const budgetField = document.getElementById('budget');
+    const timeframeField = document.getElementById('timeframe');
+
+    // Set max queries and budget
+    // For Wikit: maxQueries is the TOTAL monthly quota, not daily queries
+    // Use "single" timeframe to represent the total monthly quota
+    queriesField.value = maxQueries;
+    budgetField.value = budgetMax;
+
+    // Use "single" timeframe since we're specifying the total monthly quota
+    timeframeField.value = 'single';
+
+    // Switch to budget mode if not already
+    const budgetModeToggle = document.getElementById('budgetModeToggle');
+    if (!budgetModeToggle.checked) {
+        budgetModeToggle.checked = true;
+        toggleBudgetMode();
+    }
+
+    // Update analysis with new values
+    updateAnalysis();
 }
 
 function getExternalServicesConfig() {

@@ -37,6 +37,8 @@ A professional web-based calculator to estimate and compare costs across differe
 - **Live Data Integration**: Real-time pricing from LiteLLM
 - **Provider Filtering**: Focus on specific providers
 - **Usage Scenarios**: Presets for chatbot, content generation, code assistance
+- **Wikit License Presets**: Quick configuration for Wikit Semantics platform tiers
+- **External Services**: Cost calculation for additional services (Web Search, Image Generation)
 - **Responsive Design**: Works on desktop and mobile
 
 ## Usage
@@ -96,6 +98,13 @@ The calculator includes **hundreds of models** from major providers:
 - Filter by provider
 - Compare similar models
 - Make informed decision based on cost and capability
+
+### Wikit License Optimization
+**Scenario**: "I have Wikit Enterprise Standard license, which external LLMs fit my budget?"
+- Enable Wikit License Presets
+- Select "Enterprise Standard (100K req/month - 1250€/month)"
+- Calculator automatically sets budget mode with 100,000 queries and 1,250€ budget
+- See which external LLM models fit within your Wikit subscription limits
 
 ## Technical Details
 

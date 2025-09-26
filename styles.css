@@ -171,16 +171,21 @@ body {
 }
 
 /* External Services Styles */
-.external-services-section {
+.external-services-section, .wikit-presets-section {
     border: 1px solid var(--gray-200);
     border-radius: var(--radius-lg);
     padding: var(--space-4);
     background: var(--gray-50);
 }
 
-.external-services-config {
+.external-services-config, .wikit-presets-config {
     margin-top: var(--space-3);
     padding-left: var(--space-4);
+}
+
+.wikit-presets-section {
+    border-left: 4px solid var(--primary-500);
+    background: linear-gradient(135deg, var(--primary-25) 0%, var(--gray-50) 100%);
 }
 
 .service-item {

@@ -45,11 +45,14 @@
                     <div class="form-group">
                         <label for="timeframe" id="timeframeLabel">Period:</label>
                         <select id="timeframe" required>
-                            <option value="single">Single Use</option>
-                            <option value="daily">Per Day</option>
-                            <option value="monthly" selected>Per Month</option>
-                            <option value="yearly">Per Year</option>
+                            <option value="single">Single Use (total queries)</option>
+                            <option value="daily">Per Day (queries × days)</option>
+                            <option value="monthly" selected>Per Month (queries × 30)</option>
+                            <option value="yearly">Per Year (queries × 365)</option>
                         </select>
+                        <small style="color: #666; font-size: 0.85em; display: block; margin-top: 4px;">
+                            💡 "Single Use" = total quota | Other periods multiply queries by timeframe
+                        </small>
                     </div>
                     
                     <!-- Budget field (only visible in budget mode) -->
@@ -79,6 +82,35 @@
                         <option value="content">Content Generation</option>
                         <option value="code">Code Assistant</option>
                     </select>
+                </div>
+
+                <!-- Wikit License Presets Section -->
+                <div class="form-group wikit-presets-section">
+                    <div class="section-header" style="display: flex; align-items: center; margin-bottom: 10px;">
+                        <label class="checkbox-wrapper">
+                            <input type="checkbox" id="enableWikitPresets">
+                            <span class="checkmark"></span>
+                            Wikit License Presets
+                        </label>
+                    </div>
+                    <div id="wikitPresetsConfig" class="wikit-presets-config" style="display: none;">
+                        <div class="form-group">
+                            <label for="wikitLicense">Wikit License:</label>
+                            <select id="wikitLicense">
+                                <option value="">Select License</option>
+                                <optgroup label="Licence Starter">
+                                    <option value="starter-500" data-queries="5000" data-budget="330">Starter 500 (5K req/month - 330€/month)</option>
+                                    <option value="starter-1000" data-queries="15000" data-budget="660">Starter 1000 (15K req/month - 660€/month)</option>
+                                    <option value="starter-2000" data-queries="30000" data-budget="990">Starter 2000 (30K req/month - 990€/month)</option>
+                                </optgroup>
+                                <optgroup label="Licence Enterprise">
+                                    <option value="enterprise-standard" data-queries="100000" data-budget="1250">Enterprise Standard (100K req/month - 1250€/month)</option>
+                                    <option value="enterprise-plus" data-queries="250000" data-budget="1660">Enterprise Plus (250K req/month - 1660€/month)</option>
+                                    <option value="enterprise-premium" data-queries="1000000" data-budget="3800">Enterprise Premium (1M req/month - 3800€/month)</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- External Services Section -->

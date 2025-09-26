@@ -47,6 +47,7 @@ Timeframe multipliers: daily=1, monthly=30, yearly=365, single=1
 **Model Selector**: Scrollable checkbox grid organized by provider with bulk select/deselect actions
 **Parameter Form**: Input fields for queries, tokens, timeframe, and usage scenarios with preset configurations
 **External Services**: Optional section to configure additional service costs (Web Search, Image Generation, Custom Services)
+**Wikit License Presets**: Quick configuration presets for Wikit Semantics platform licensing tiers
 
 ## External Services Feature
 
@@ -64,6 +65,22 @@ Timeframe multipliers: daily=1, monthly=30, yearly=365, single=1
 - External services costs are calculated per query and scaled by timeframe
 - Added to total cost calculations across all analysis modes
 - Included in budget mode capacity calculations
+
+## Wikit License Presets Feature
+
+**Configuration Options:**
+- **Licence Starter**: 500 (5K req/month - 330€/month), 1000 (15K req/month - 660€/month), 2000 (30K req/month - 990€/month)
+- **Licence Enterprise**: Standard (100K req/month - 1250€/month), Plus (250K req/month - 1660€/month), Premium (1M req/month - 3800€/month)
+
+**Automatic Configuration:**
+- Automatically sets query limit to total monthly quota (using "Single Use" timeframe)
+- Sets budget maximum to monthly license cost
+- Switches calculator to budget mode for capacity analysis
+- Enables comparison of external LLM costs within Wikit budget constraints
+
+**Use Case:**
+- Wikit customers can quickly see which external LLM models fit within their licensed monthly budget and query quotas
+- Helps optimize external LLM usage while staying within Wikit subscription limits
 
 ## Development Commands
 
